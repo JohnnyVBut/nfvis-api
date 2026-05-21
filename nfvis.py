@@ -17,8 +17,8 @@ from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 from requests.auth import HTTPBasicAuth
 
-import urn_data as ud
-from models import Vm, is_valid_json, check_timezone_settings, make_interface_string
+from . import urn_data as ud
+from .models import Vm, is_valid_json, check_timezone_settings, make_interface_string
 
 urllib3.disable_warnings(InsecureRequestWarning)
 
