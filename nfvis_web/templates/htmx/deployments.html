@@ -16,15 +16,21 @@
       {% set vg = dep.get('vm_group', [{}])[0] %}
       {% set svc = dep.get('_svc_state', '') %}
       {% set vm  = dep.get('_vm_state',  '') %}
+      {% set active     = svc == 'SERVICE_ACTIVE_STATE' %}
+      {% set stopped    = svc == 'SERVICE_STOPPED_STATE' %}
+      {% set transient  = not active and not stopped %}
       <tr>
         <td class="fw-semibold">{{ dep.name }}</td>
         <td>
-          {% if svc == 'SERVICE_ACTIVE_STATE' %}
+          {% if active %}
             <span class="badge bg-success">Active</span>
-          {% elif svc == 'SERVICE_STOPPED_STATE' %}
+          {% elif stopped %}
             <span class="badge bg-secondary">Stopped</span>
           {% elif svc == 'SERVICE_ERROR_STATE' %}
             <span class="badge bg-danger">Error</span>
+          {% elif svc == 'SERVICE_INERT_STATE' %}
+            <span class="spinner-border spinner-border-sm text-primary me-1"></span>
+            <span class="text-secondary">Transitioning</span>
           {% elif svc %}
             <span class="badge bg-warning text-dark">{{ svc }}</span>
           {% else %}
@@ -38,6 +44,14 @@
             <span class="badge bg-secondary">Shutoff</span>
           {% elif vm == 'VM_ERROR_STATE' %}
             <span class="badge bg-danger">Error</span>
+          {% elif vm in ('VM_STARTING_STATE', 'VM_SHUTTING_DOWN_STATE', 'VM_REBOOTING_STATE') %}
+            <span class="spinner-border spinner-border-sm text-primary me-1"></span>
+            <span class="text-secondary">
+              {% if vm == 'VM_STARTING_STATE' %}Starting
+              {% elif vm == 'VM_SHUTTING_DOWN_STATE' %}Stopping
+              {% elif vm == 'VM_REBOOTING_STATE' %}Rebooting
+              {% endif %}
+            </span>
           {% elif vm %}
             <span class="badge bg-warning text-dark">{{ vm }}</span>
           {% else %}
@@ -55,32 +69,28 @@
           {% endfor %}
         </td>
         <td class="text-end pe-2 text-nowrap">
-          {% set active = svc == 'SERVICE_ACTIVE_STATE' %}
-          {% set stopped = svc == 'SERVICE_STOPPED_STATE' %}
-          {# Power button #}
-          {% if active %}
-          <button class="btn btn-sm btn-outline-danger py-0 px-1 me-1"
-                  data-vm-name="{{ dep.name }}" data-vm-action="STOP"
-                  data-bs-toggle="modal" data-bs-target="#vmActionModal"
-                  title="Stop VM">
-            <i class="bi bi-stop-fill"></i>
-          </button>
+          {% if transient %}
+            {# No buttons during state transitions #}
+          {% elif active %}
+            <button class="btn btn-sm btn-outline-danger py-0 px-1 me-1"
+                    data-vm-name="{{ dep.name }}" data-vm-action="STOP"
+                    data-bs-toggle="modal" data-bs-target="#vmActionModal"
+                    title="Stop VM">
+              <i class="bi bi-stop-fill"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-warning py-0 px-1"
+                    data-vm-name="{{ dep.name }}" data-vm-action="REBOOT"
+                    data-bs-toggle="modal" data-bs-target="#vmActionModal"
+                    title="Reboot VM">
+              <i class="bi bi-arrow-clockwise"></i>
+            </button>
           {% elif stopped %}
-          <button class="btn btn-sm btn-outline-success py-0 px-1 me-1"
-                  data-vm-name="{{ dep.name }}" data-vm-action="START"
-                  data-bs-toggle="modal" data-bs-target="#vmActionModal"
-                  title="Start VM">
-            <i class="bi bi-play-fill"></i>
-          </button>
-          {% endif %}
-          {# Reset button — only when active #}
-          {% if active %}
-          <button class="btn btn-sm btn-outline-warning py-0 px-1"
-                  data-vm-name="{{ dep.name }}" data-vm-action="REBOOT"
-                  data-bs-toggle="modal" data-bs-target="#vmActionModal"
-                  title="Reboot VM">
-            <i class="bi bi-arrow-clockwise"></i>
-          </button>
+            <button class="btn btn-sm btn-outline-success py-0 px-1"
+                    data-vm-name="{{ dep.name }}" data-vm-action="START"
+                    data-bs-toggle="modal" data-bs-target="#vmActionModal"
+                    title="Start VM">
+              <i class="bi bi-play-fill"></i>
+            </button>
           {% endif %}
         </td>
       </tr>
