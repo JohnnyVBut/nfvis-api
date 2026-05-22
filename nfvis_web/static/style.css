@@ -2,6 +2,11 @@ body {
   font-size: 0.92rem;
 }
 
+/* Semi-transparent toasts */
+#toast-container .toast {
+  opacity: 0.88;
+}
+
 .card-header {
   background-color: #f8f9fa;
   border-bottom: 1px solid #dee2e6;
