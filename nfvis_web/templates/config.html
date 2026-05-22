@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+{% block content %}
+
+<ul class="nav nav-tabs mb-4" id="configTabs" role="tablist">
+  <li class="nav-item">
+    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-images">
+      <i class="bi bi-box-seam me-1"></i>Images
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-vms">
+      <i class="bi bi-pc-display me-1"></i>VMs
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-networks">
+      <i class="bi bi-diagram-3 me-1"></i>Networks &amp; VLANs
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-switchports">
+      <i class="bi bi-ethernet me-1"></i>Switchports
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content">
+
+  <!-- ===== IMAGES ===== -->
+  <div class="tab-pane fade show active" id="tab-images">
+    <div class="row g-3">
+
+      <!-- Register image -->
+      <div class="col-lg-6">
+        <div class="card shadow-sm">
+          <div class="card-header fw-semibold">Register Image</div>
+          <div class="card-body">
+            <form hx-post="{{ url_for('config_image_register') }}"
+                  hx-target="#img-reg-result" hx-swap="innerHTML">
+              <div class="mb-2">
+                <label class="form-label small fw-semibold">Image Name</label>
+                <input type="text" name="name" class="form-control form-control-sm"
+                       placeholder="nfvis-vm-image" required>
+              </div>
+              <div class="mb-2">
+                <label class="form-label small fw-semibold">Path / URL</label>
+                <input type="text" name="path" class="form-control form-control-sm"
+                       placeholder="/data/intdatastore/uploads/image.tar.gz" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Tag Name (optional)</label>
+                <input type="text" name="tag" class="form-control form-control-sm"
+                       placeholder="v1.0">
+              </div>
+              <button class="btn btn-sm btn-primary">
+                <i class="bi bi-upload me-1"></i>Register
+              </button>
+            </form>
+            <div id="img-reg-result" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Unregister image -->
+      <div class="col-lg-6">
+        <div class="card shadow-sm">
+          <div class="card-header fw-semibold">Unregister Image</div>
+          <div class="card-body">
+            <form hx-post="{{ url_for('config_image_unregister') }}"
+                  hx-target="#img-unreg-result" hx-swap="innerHTML">
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Image Name</label>
+                <select name="name" class="form-select form-select-sm" required>
+                  <option value="">— select —</option>
+                  {% for img in images %}
+                  <option value="{{ img }}">{{ img }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <button class="btn btn-sm btn-danger">
+                <i class="bi bi-trash me-1"></i>Unregister
+              </button>
+            </form>
+            <div id="img-unreg-result" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== VMs ===== -->
+  <div class="tab-pane fade" id="tab-vms">
+    <div class="row g-3">
+
+      <!-- Deploy VM -->
+      <div class="col-lg-7">
+        <div class="card shadow-sm">
+          <div class="card-header fw-semibold">Deploy VM</div>
+          <div class="card-body">
+            <form hx-post="{{ url_for('config_vm_deploy') }}"
+                  hx-target="#vm-deploy-result" hx-swap="innerHTML">
+              <div class="row g-2 mb-2">
+                <div class="col-sm-6">
+                  <label class="form-label small fw-semibold">Deployment Name</label>
+                  <input type="text" name="name" class="form-control form-control-sm"
+                         placeholder="my-vm" required>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label small fw-semibold">Datastore</label>
+                  <input type="text" name="datastore" class="form-control form-control-sm"
+                         placeholder="datastore1" required>
+                </div>
+              </div>
+              <div class="row g-2 mb-3">
+                <div class="col-sm-6">
+                  <label class="form-label small fw-semibold">Image</label>
+                  <select name="image" class="form-select form-select-sm" required>
+                    <option value="">— select —</option>
+                    {% for img in images %}
+                    <option value="{{ img }}">{{ img }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label small fw-semibold">Flavor</label>
+                  <select name="flavor" class="form-select form-select-sm" required>
+                    <option value="">— select —</option>
+                    {% for fl in flavors %}
+                    <option value="{{ fl }}">{{ fl }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <p class="fw-semibold small mb-1">NICs (network name)</p>
+              {% for i in range(4) %}
+              <div class="input-group input-group-sm mb-1">
+                <span class="input-group-text">NIC {{ i }}</span>
+                <input type="text" name="nic_{{ i }}"
+                       class="form-control" placeholder="network-name">
+              </div>
+              {% endfor %}
+              <button class="btn btn-sm btn-success mt-3">
+                <i class="bi bi-play-circle me-1"></i>Deploy
+              </button>
+            </form>
+            <div id="vm-deploy-result" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VM Actions -->
+      <div class="col-lg-5">
+        <div class="card shadow-sm mb-3">
+          <div class="card-header fw-semibold">VM Lifecycle</div>
+          <div class="card-body">
+            <form hx-post="{{ url_for('config_vm_action') }}"
+                  hx-target="#vm-action-result" hx-swap="innerHTML">
+              <div class="mb-2">
+                <label class="form-label small fw-semibold">VM Name</label>
+                <input type="text" name="name" class="form-control form-control-sm"
+                       placeholder="my-vm" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Action</label>
+                <select name="action" class="form-select form-select-sm" required>
+                  <option value="START">Start</option>
+                  <option value="STOP">Stop</option>
+                  <option value="REBOOT">Reboot</option>
+                  <option value="RECOVER">Recover</option>
+                </select>
+              </div>
+              <button class="btn btn-sm btn-warning">
+                <i class="bi bi-lightning me-1"></i>Execute
+              </button>
+            </form>
+            <div id="vm-action-result" class="mt-2"></div>
+          </div>
+        </div>
+
+        <div class="card shadow-sm">
+          <div class="card-header fw-semibold">Undeploy VM</div>
+          <div class="card-body">
+            <form hx-post="{{ url_for('config_vm_undeploy') }}"
+                  hx-target="#vm-undeploy-result" hx-swap="innerHTML">
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">VM Name</label>
+                <input type="text" name="name" class="form-control form-control-sm"
+                       placeholder="my-vm" required>
+              </div>
+              <button class="btn btn-sm btn-danger">
+                <i class="bi bi-trash me-1"></i>Undeploy
+              </button>
+            </form>
+            <div id="vm-undeploy-result" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== NETWORKS & VLANs ===== -->
+  <div class="tab-pane fade" id="tab-networks">
+    <div class="row g-3">
+
+      <!-- Add network -->
+      <div class="col-lg-4">
+        <div class="card shadow-sm">
+          <div class="card-header fw-semibold">Add Network</div>
+          <div class="card-body">
+            <form hx-post="{{ url_for('config_network_add') }}"
+                  hx-target="#net-add-result" hx-swap="innerHTML">
+              <div class="mb-2">
+                <label class="form-label small fw-semibold">Network Name</label>
+                <input type="text" name="name" class="form-control form-control-sm"
+                       placeholder="net-mgmt" required>
+              </div>
+              <div class="mb-2">
+                <label class="form-label small fw-semibold">VLAN ID (optional)</label>
+                <input type="number" name="vlan" class="form-control form-control-sm"
+                       placeholder="100" min="1" max="4094">
+              </div>
+              <div class="mb-3 form-check">
+                <input class="form-check-input" type="checkbox" name="trunk"
+                       id="trunk-check" value="true">
+                <label class="form-check-label small" for="trunk-check">Trunk mode</label>
+              </div>
+              <button class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Add
+              </button>
+            </form>
+            <div id="net-add-result" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delete network -->
+      <div class="col-lg-4">
+        <div class="card shadow-sm">
+          <div class="card-header fw-semibold">Delete Network</div>
+          <div class="card-body">
+            <form hx-post="{{ url_for('config_network_delete') }}"
+                  hx-target="#net-del-result" hx-swap="innerHTML">
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Network Name</label>
+                <input type="text" name="name" class="form-control form-control-sm"
+                       placeholder="net-mgmt" required>
+              </div>
+              <button class="btn btn-sm btn-danger">
+                <i class="bi bi-trash me-1"></i>Delete
+              </button>
+            </form>
+            <div id="net-del-result" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VLANs -->
+      <div class="col-lg-4">
+        <div class="card shadow-sm">
+          <div class="card-header fw-semibold">VLANs</div>
+          <div class="card-body">
+            <form hx-post="{{ url_for('config_vlan_add') }}"
+                  hx-target="#vlan-result" hx-swap="innerHTML" class="mb-3">
+              <label class="form-label small fw-semibold">Add VLAN ID</label>
+              <div class="input-group input-group-sm">
+                <input type="number" name="vlan" class="form-control"
+                       placeholder="200" min="1" max="4094" required>
+                <button class="btn btn-primary">
+                  <i class="bi bi-plus"></i> Add
+                </button>
+              </div>
+            </form>
+            <form hx-post="{{ url_for('config_vlan_delete') }}"
+                  hx-target="#vlan-result" hx-swap="innerHTML">
+              <label class="form-label small fw-semibold">Delete VLAN ID</label>
+              <div class="input-group input-group-sm">
+                <input type="number" name="vlan" class="form-control"
+                       placeholder="200" min="1" max="4094" required>
+                <button class="btn btn-danger">
+                  <i class="bi bi-trash"></i> Delete
+                </button>
+              </div>
+            </form>
+            <div id="vlan-result" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== SWITCHPORTS ===== -->
+  <div class="tab-pane fade" id="tab-switchports">
+    <div class="row g-3">
+      <div class="col-lg-5">
+        <div class="card shadow-sm">
+          <div class="card-header fw-semibold">Modify Switchport</div>
+          <div class="card-body">
+            <form hx-post="{{ url_for('config_switchport_modify') }}"
+                  hx-target="#swp-result" hx-swap="innerHTML">
+              <div class="mb-2">
+                <label class="form-label small fw-semibold">Port (e.g. 0/1)</label>
+                <input type="text" name="port" class="form-control form-control-sm"
+                       placeholder="0/1" required>
+              </div>
+              <div class="mb-2">
+                <label class="form-label small fw-semibold">Mode</label>
+                <select name="mode" class="form-select form-select-sm">
+                  <option value="trunk">Trunk</option>
+                  <option value="access">Access</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">VLAN ID (access mode)</label>
+                <input type="number" name="vlan" class="form-control form-control-sm"
+                       placeholder="100" min="1" max="4094">
+              </div>
+              <button class="btn btn-sm btn-primary">
+                <i class="bi bi-pencil-square me-1"></i>Apply
+              </button>
+            </form>
+            <div id="swp-result" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- tab-content -->
+{% endblock %}

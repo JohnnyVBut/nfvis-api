@@ -1,0 +1,8 @@
+<div class="alert alert-{{ category }} py-2 mb-0 small">
+  {% if category == 'success' %}
+    <i class="bi bi-check-circle me-1"></i>
+  {% else %}
+    <i class="bi bi-exclamation-triangle me-1"></i>
+  {% endif %}
+  {{ message }}
+</div>

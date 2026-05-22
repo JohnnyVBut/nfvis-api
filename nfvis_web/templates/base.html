@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NFVIS Manager{% if title %} — {{ title }}{% endif %}</title>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" defer></script>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+  <div class="container-fluid">
+    <span class="navbar-brand fw-bold">
+      <i class="bi bi-hdd-network me-2"></i>NFVIS Manager
+    </span>
+    {% if hostname %}
+    <span class="navbar-text text-secondary me-3">
+      <i class="bi bi-plug-fill text-success me-1"></i>{{ hostname }}
+    </span>
+    {% endif %}
+    {% if request.endpoint not in ('login',) %}
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('dashboard') }}"
+         class="btn btn-sm {% if request.endpoint == 'dashboard' %}btn-primary{% else %}btn-outline-light{% endif %}">
+        <i class="bi bi-speedometer2 me-1"></i>Dashboard
+      </a>
+      <a href="{{ url_for('config') }}"
+         class="btn btn-sm {% if request.endpoint == 'config' %}btn-primary{% else %}btn-outline-light{% endif %}">
+        <i class="bi bi-gear me-1"></i>Configuration
+      </a>
+      <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline-danger">
+        <i class="bi bi-box-arrow-right me-1"></i>Logout
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="container-fluid px-4">
+  {% block content %}{% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

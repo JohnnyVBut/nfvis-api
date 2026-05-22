@@ -1,0 +1,30 @@
+{% if networks %}
+<table class="table table-sm table-hover mb-0 small">
+  <thead class="table-light">
+    <tr>
+      <th>Name</th>
+      <th>VLAN</th>
+      <th>Trunk</th>
+      <th>Bridge</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for net in networks %}
+    <tr>
+      <td class="fw-semibold">{{ net.get('name', '—') }}</td>
+      <td>{{ net.get('vlan', '—') }}</td>
+      <td>
+        {% if net.get('trunk') %}
+          <i class="bi bi-check-circle-fill text-success"></i>
+        {% else %}
+          <i class="bi bi-dash-circle text-secondary"></i>
+        {% endif %}
+      </td>
+      <td class="font-monospace text-secondary small">{{ net.get('bridge', '—') }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="text-secondary small p-3 mb-0">No networks found.</p>
+{% endif %}

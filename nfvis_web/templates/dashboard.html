@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row g-3 mb-3">
+
+  <!-- Platform Info -->
+  <div class="col-md-6 col-xl-4">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-cpu me-2 text-primary"></i>Platform
+      </div>
+      <div class="card-body"
+           hx-get="{{ url_for('htmx_platform') }}"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        {% include "htmx/_spinner.html" %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Disk Space -->
+  <div class="col-md-6 col-xl-4">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-device-hdd me-2 text-warning"></i>Disk Space
+      </div>
+      <div class="card-body"
+           hx-get="{{ url_for('htmx_diskspace') }}"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        {% include "htmx/_spinner.html" %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Physical Interfaces -->
+  <div class="col-md-12 col-xl-4">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-ethernet me-2 text-info"></i>Physical Interfaces
+      </div>
+      <div class="card-body p-0"
+           hx-get="{{ url_for('htmx_interfaces') }}"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        {% include "htmx/_spinner.html" %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="row g-3 mb-3">
+
+  <!-- VNF Images -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-box-seam me-2 text-success"></i>VNF Images
+      </div>
+      <div class="card-body p-0"
+           hx-get="{{ url_for('htmx_images') }}"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        {% include "htmx/_spinner.html" %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Networks -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-diagram-3 me-2 text-secondary"></i>Virtual Networks
+      </div>
+      <div class="card-body p-0"
+           hx-get="{{ url_for('htmx_networks') }}"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        {% include "htmx/_spinner.html" %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- VM Deployments -->
+<div class="row g-3">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-pc-display me-2 text-danger"></i>VM Deployments
+      </div>
+      <div class="card-body p-0"
+           hx-get="{{ url_for('htmx_deployments') }}"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        {% include "htmx/_spinner.html" %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

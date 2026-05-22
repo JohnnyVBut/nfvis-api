@@ -1,0 +1,17 @@
+body {
+  font-size: 0.92rem;
+}
+
+.card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  padding: 0.5rem 1rem;
+}
+
+.table > :not(caption) > * > * {
+  padding: 0.4rem 0.75rem;
+}
+
+.nav-tabs .nav-link {
+  font-size: 0.88rem;
+}

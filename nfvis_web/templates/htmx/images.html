@@ -1,0 +1,28 @@
+{% if images %}
+<table class="table table-sm table-hover mb-0 small">
+  <thead class="table-light">
+    <tr>
+      <th>Name</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for img in images %}
+    <tr>
+      <td class="font-monospace">{{ img.name }}</td>
+      <td>
+        {% if img.state == 'IMAGE_ACTIVE_STATE' %}
+          <span class="badge bg-success">Active</span>
+        {% elif img.state == 'IMAGE_NOT_FOUND' %}
+          <span class="badge bg-secondary">Not found</span>
+        {% else %}
+          <span class="badge bg-warning text-dark">{{ img.state }}</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="text-secondary small p-3 mb-0">No images registered.</p>
+{% endif %}

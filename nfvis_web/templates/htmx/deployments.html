@@ -1,0 +1,32 @@
+{% if deployments %}
+<table class="table table-sm table-hover mb-0 small">
+  <thead class="table-light">
+    <tr>
+      <th>Name</th>
+      <th>Image</th>
+      <th>Flavor</th>
+      <th>NICs</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for dep in deployments %}
+      {% set vg = dep.get('vm_group', [{}])[0] %}
+      <tr>
+        <td class="fw-semibold">{{ dep.name }}</td>
+        <td class="font-monospace">{{ vg.get('image', '—') }}</td>
+        <td>{{ vg.get('flavor', '—') }}</td>
+        <td>
+          {% set ifaces = vg.get('interfaces', {}).get('interface', []) %}
+          {% for nic in ifaces %}
+            <span class="badge bg-secondary me-1">{{ nic.network }}</span>
+          {% else %}
+            <span class="text-secondary">—</span>
+          {% endfor %}
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="text-secondary small p-3 mb-0">No deployments found.</p>
+{% endif %}
