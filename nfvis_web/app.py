@@ -133,13 +133,20 @@ def htmx_platform():
     api = _get_api()
     try:
         code, raw = api.query("get_platform_detail")
-        app.logger.debug(f"platform-detail raw response: {raw[:500]}")
         parsed = json.loads(raw)
-        data = (
-            parsed.get("platform-detail:platform-detail")
+        container = (
+            parsed.get("platform_info:platform-detail")
+            or parsed.get("platform-detail:platform-detail")
             or parsed.get("platform-detail")
             or next(iter(parsed.values()), {})
         )
+        # Flatten nested hardware_info / software_info into a single dict
+        data = {}
+        for k, v in container.items():
+            if isinstance(v, dict):
+                data.update(v)
+            else:
+                data[k] = v
     except Exception as exc:
         app.logger.warning(f"platform-detail error: {exc}")
         data = {}
@@ -152,17 +159,18 @@ def htmx_diskspace():
     api = _get_api()
     try:
         code, raw = api.query("get_disk_space")
-        app.logger.debug(f"disk-space raw response: {raw[:500]}")
         parsed = json.loads(raw)
-        data = (
-            parsed.get("disk-space:disk-space")
+        container = (
+            parsed.get("system:disk-space")
+            or parsed.get("disk-space:disk-space")
             or parsed.get("disk-space")
             or next(iter(parsed.values()), {})
         )
+        disks = container.get("disk-info", []) if isinstance(container, dict) else []
     except Exception as exc:
         app.logger.warning(f"disk-space error: {exc}")
-        data = {}
-    return render_template("htmx/diskspace.html", data=data)
+        disks = []
+    return render_template("htmx/diskspace.html", disks=disks)
 
 
 @app.get("/dashboard/images")
@@ -221,16 +229,14 @@ def htmx_vlans():
     api = _get_api()
     try:
         code, raw = api.query("show_vlan")
-        app.logger.debug(f"show_vlan raw response: {raw[:500]}")
         parsed = json.loads(raw)
+        collection = parsed.get("collection", parsed)
         vlans = (
-            parsed.get("vlan:vlan")
-            or parsed.get("switch:vlan")
-            or parsed.get("vlan")
-            or next(iter(parsed.values()), [])
+            collection.get("switch:vlan")
+            or collection.get("vlan:vlan")
+            or collection.get("vlan")
+            or []
         )
-        if isinstance(vlans, dict):
-            vlans = vlans.get("vlan-id", vlans.get("vlan", []))
     except Exception as exc:
         app.logger.warning(f"show_vlan error: {exc}")
         vlans = []
@@ -243,13 +249,13 @@ def htmx_portchannels():
     api = _get_api()
     try:
         code, raw = api.query("showPortChannel")
-        app.logger.debug(f"showPortChannel raw response: {raw[:500]}")
         parsed = json.loads(raw)
+        collection = parsed.get("collection", parsed)
         portchannels = (
-            parsed.get("port-channel:port-channel")
-            or parsed.get("switch:port-channel")
-            or parsed.get("port-channel")
-            or next(iter(parsed.values()), [])
+            collection.get("switch:port-channel")
+            or collection.get("port-channel:port-channel")
+            or collection.get("port-channel")
+            or []
         )
         if isinstance(portchannels, dict):
             portchannels = [portchannels]
@@ -257,6 +263,28 @@ def htmx_portchannels():
         app.logger.warning(f"showPortChannel error: {exc}")
         portchannels = []
     return render_template("htmx/portchannels.html", portchannels=portchannels)
+
+
+@app.get("/dashboard/switchports")
+@login_required
+def htmx_switchports():
+    api = _get_api()
+    try:
+        code, raw = api.query("get_all_swp_config")
+        app.logger.debug(f"get_all_swp_config raw response: {raw[:500]}")
+        parsed = json.loads(raw)
+        container = (
+            parsed.get("gigabitEthernet:gigabitEthernet")
+            or parsed.get("switch:gigabitEthernet")
+            or parsed.get("gigabitEthernet")
+            or next(iter(parsed.values()), [])
+        )
+        if isinstance(container, dict):
+            container = [container]
+    except Exception as exc:
+        app.logger.warning(f"get_all_swp_config error: {exc}")
+        container = []
+    return render_template("htmx/switchports.html", switchports=container)
 
 
 # ---------------------------------------------------------------------------

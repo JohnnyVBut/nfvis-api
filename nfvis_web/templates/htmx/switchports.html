@@ -1,0 +1,47 @@
+{% if switchports %}
+<table class="table table-sm table-hover mb-0 small">
+  <thead class="table-light">
+    <tr>
+      <th>Interface</th>
+      <th>Mode</th>
+      <th>Access VLAN</th>
+      <th>Native VLAN</th>
+      <th>Allowed VLANs</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for port in switchports %}
+    {% set swp  = port.get('switchport', {}) %}
+    {% set mode = swp.get('mode', '—') %}
+    {% set acc  = swp.get('access', {}).get('vlan', '—') %}
+    {% set nat  = swp.get('trunk', {}).get('native', {}).get('vlan', '—') %}
+    {% set allowed = swp.get('trunk', {}).get('allowed', {}).get('vlan', {}).get('vlan-range', '—') %}
+    <tr>
+      <td class="fw-semibold font-monospace">Gi{{ port.get('name', '—') }}</td>
+      <td>
+        {% if mode == 'trunk' %}
+          <span class="badge bg-primary">Trunk</span>
+        {% elif mode == 'access' %}
+          <span class="badge bg-secondary">Access</span>
+        {% else %}
+          <span class="text-secondary">{{ mode }}</span>
+        {% endif %}
+      </td>
+      <td>{{ acc }}</td>
+      <td>{{ nat }}</td>
+      <td class="text-secondary font-monospace" style="font-size:0.78rem;">{{ allowed }}</td>
+      <td>
+        {% if port.get('shutdown') is not none and port.get('shutdown') is sameas false %}
+          <span class="badge bg-danger">Down</span>
+        {% else %}
+          <span class="badge bg-success">Up</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="text-secondary small p-3 mb-0">No switchport data available.</p>
+{% endif %}

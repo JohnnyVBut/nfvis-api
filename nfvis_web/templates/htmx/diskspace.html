@@ -1,27 +1,36 @@
-{% if data %}
-  {% set total = data.get('total', 0) | float %}
-  {% set used  = data.get('used',  0) | float %}
-  {% set free  = data.get('free',  0) | float %}
-  {% set pct   = ((used / total) * 100) | round(1) if total > 0 else 0 %}
-  {% set bar_class = 'bg-danger' if pct > 85 else ('bg-warning' if pct > 60 else 'bg-success') %}
-
-<p class="mb-1 small text-secondary">
-  Used <strong>{{ used | int }} MB</strong> of {{ total | int }} MB
-  &mdash; <strong>{{ free | int }} MB</strong> free
-</p>
-<div class="progress" style="height: 20px;">
-  <div class="progress-bar {{ bar_class }}" role="progressbar"
-       style="width: {{ pct }}%">{{ pct }}%</div>
-</div>
-
-{% if data.get('breakdown') %}
-<ul class="list-unstyled mt-2 mb-0 small">
-  {% for item in data.breakdown %}
-  <li class="text-secondary">{{ item }}</li>
-  {% endfor %}
-</ul>
-{% endif %}
-
+{% if disks %}
+<table class="table table-sm table-hover mb-0 small">
+  <thead class="table-light">
+    <tr>
+      <th>Disk</th>
+      <th>Physical</th>
+      <th>Total</th>
+      <th>Used</th>
+      <th>Free</th>
+      <th style="min-width:100px">Usage</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for disk in disks %}
+    {% set pct = disk.get('use-percent', '0%') | replace('%','') | int %}
+    {% set bar_class = 'bg-danger' if pct > 85 else ('bg-warning' if pct > 60 else 'bg-success') %}
+    <tr>
+      <td class="fw-semibold font-monospace">{{ disk.get('disk-name', '—') }}</td>
+      <td class="text-secondary">{{ disk.get('associated-physical-disk', '—') }}</td>
+      <td>{{ disk.get('total-size', '—') }}</td>
+      <td>{{ disk.get('size-used', '—') }}</td>
+      <td>{{ disk.get('size-available', '—') }}</td>
+      <td>
+        <div class="progress" style="height:14px;">
+          <div class="progress-bar {{ bar_class }}" style="width:{{ pct }}%;font-size:0.7rem;">
+            {{ pct }}%
+          </div>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 {% else %}
-<span class="text-secondary small">No disk data available.</span>
+<p class="text-secondary small p-3 mb-0">No disk data available.</p>
 {% endif %}

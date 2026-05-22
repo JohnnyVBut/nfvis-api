@@ -1,11 +1,13 @@
 {% if data %}
 <dl class="row mb-0 small">
+  <dt class="col-5 text-secondary">Hostname</dt>
+  <dd class="col-7 mb-1 fw-semibold">{{ hostname }}</dd>
   {% for key, val in data.items() %}
+  {% if val is not mapping %}
   <dt class="col-5 text-truncate text-secondary">{{ key }}</dt>
   <dd class="col-7 mb-1">{{ val }}</dd>
+  {% endif %}
   {% endfor %}
-  <dt class="col-5 text-secondary">Hostname</dt>
-  <dd class="col-7 mb-0 fw-semibold">{{ hostname }}</dd>
 </dl>
 {% else %}
 <span class="text-secondary small">No platform data available.</span>
