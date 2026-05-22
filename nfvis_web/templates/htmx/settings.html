@@ -1,20 +1,19 @@
 {% if data %}
-{% set mgmt = data.get('mgmt-ip', data.get('mgmt', {})) %}
-{% set dns  = data.get('dns-server', data.get('nameserver', [])) %}
+{% set mgmt    = data.get('mgmt-ip', data.get('mgmt', {})) %}
+{% set ip_info = mgmt.get('ip', mgmt) if mgmt is mapping else {} %}
+{% set address = ip_info.get('address', '—') if ip_info is mapping else '—' %}
+{% set netmask = ip_info.get('netmask', ip_info.get('mask', '—')) if ip_info is mapping else '—' %}
+{% set dns     = data.get('dns-server', data.get('nameserver', data.get('dns', []))) %}
 
 <dl class="row mb-0 small">
   <dt class="col-5 text-secondary">Hostname</dt>
   <dd class="col-7 mb-1 fw-semibold">{{ data.get('hostname', '—') }}</dd>
 
   <dt class="col-5 text-secondary">Mgmt IP</dt>
-  <dd class="col-7 mb-1 font-monospace">
-    {{ mgmt.get('address', mgmt) if mgmt is mapping else (data.get('ip', '—')) }}
-  </dd>
+  <dd class="col-7 mb-1 font-monospace">{{ address }}</dd>
 
   <dt class="col-5 text-secondary">Mask</dt>
-  <dd class="col-7 mb-1 font-monospace">
-    {{ mgmt.get('netmask', mgmt.get('mask', data.get('netmask', '—'))) if mgmt is mapping else '—' }}
-  </dd>
+  <dd class="col-7 mb-1 font-monospace">{{ netmask }}</dd>
 
   <dt class="col-5 text-secondary">Gateway</dt>
   <dd class="col-7 mb-1 font-monospace">
@@ -25,10 +24,10 @@
   <dd class="col-7 mb-1 font-monospace">
     {% if dns is string %}
       {{ dns }}
-    {% elif dns is iterable %}
+    {% elif dns is iterable and dns %}
       {{ dns | join(', ') }}
     {% else %}
-      {{ data.get('dns', '—') }}
+      —
     {% endif %}
   </dd>
 </dl>
@@ -43,12 +42,14 @@
   </button>
   <div class="collapse" id="settings-extra">
     <dl class="row mb-0 small mt-2">
-      {% set shown = ['hostname', 'mgmt-ip', 'mgmt', 'ip', 'netmask', 'gateway',
-                      'default-gateway', 'dns-server', 'nameserver', 'dns'] %}
+      {% set shown = ['hostname', 'mgmt-ip', 'mgmt', 'gateway', 'default-gateway',
+                      'dns-server', 'nameserver', 'dns'] %}
       {% for key, val in data.items() %}
-        {% if key not in shown and val is not mapping and val is not iterable or val is string %}
-        <dt class="col-5 text-truncate text-secondary">{{ key }}</dt>
-        <dd class="col-7 mb-1">{{ val }}</dd>
+        {% if key not in shown %}
+          {% if val is string or val is number %}
+          <dt class="col-5 text-truncate text-secondary">{{ key }}</dt>
+          <dd class="col-7 mb-1">{{ val }}</dd>
+          {% endif %}
         {% endif %}
       {% endfor %}
     </dl>
