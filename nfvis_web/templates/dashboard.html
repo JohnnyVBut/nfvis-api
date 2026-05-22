@@ -85,15 +85,8 @@
   <!-- Networks -->
   <div class="col-lg-6">
     <div class="card shadow-sm">
-      <div class="card-header fw-semibold d-flex align-items-center">
-        <span><i class="bi bi-diagram-3 me-2 text-secondary"></i>Virtual Networks</span>
-        <div class="form-check form-check-inline ms-auto mb-0">
-          <input class="form-check-input" type="checkbox" id="sriov-toggle"
-                 data-bs-toggle="collapse" data-bs-target="#sriov-networks">
-          <label class="form-check-label small text-secondary" for="sriov-toggle">
-            Show SR-IOV
-          </label>
-        </div>
+      <div class="card-header fw-semibold">
+        <i class="bi bi-diagram-3 me-2 text-secondary"></i>Virtual Networks
       </div>
       <div class="card-body p-0 scrollable"
            hx-get="{{ url_for('htmx_networks') }}"
@@ -104,6 +97,23 @@
     </div>
   </div>
 
+</div>
+
+<!-- SR-IOV Networks -->
+<div class="row g-3 mb-3">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-lightning me-2 text-warning"></i>SR-IOV Networks
+      </div>
+      <div class="card-body p-0 scrollable"
+           hx-get="{{ url_for('htmx_sriov') }}"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        {% include "htmx/_spinner.html" %}
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Switch: VLANs + Switchports + Port-Channels -->

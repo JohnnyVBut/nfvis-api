@@ -80,7 +80,8 @@ _ENDPOINTS: dict[str, _Endpoint] = {
     # directly in API.modify_vm_interfaces() via _request(), bypassing the registry.
 
     # --- Networks ---------------------------------------------------------
-    "get_networks":          _Endpoint("config/networks?deep",                                                  Method.GET,    "data",   append_argument=False),
+    "get_networks":              _Endpoint("config/networks?deep",                                              Method.GET,    "data",   append_argument=False),
+    "get_networks_operational":  _Endpoint("operational/networks?deep",                                        Method.GET,    "data",   append_argument=False),
     "add_network":           _Endpoint("config/networks",                                                       Method.POST,   "data"),
     "mod_network":           _Endpoint("config/networks/network",                                               Method.PUT,    "data"),
     "del_network":           _Endpoint("config/networks/network",                                               Method.DELETE, "data"),

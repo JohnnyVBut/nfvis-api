@@ -1,0 +1,49 @@
+{% if networks %}
+<table class="table table-sm table-hover mb-0 small">
+  <thead class="table-light">
+    <tr>
+      <th>Name</th>
+      <th>Interface</th>
+      <th>VLAN</th>
+      <th>Deployment</th>
+      <th>NIC ID</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for net in networks %}
+    {% set used_by = net.get('used-by', []) %}
+    {% set vlans = net.get('vlan', []) %}
+    {# Derive physical interface from name: GE0-0-SRIOV-1 → GE0-0, LAN-SRIOV-1 → LAN #}
+    {% set name_parts = net.get('name', '').split('-SRIOV-') %}
+    {% set iface = name_parts[0] if name_parts | length > 1 else '—' %}
+    {% if used_by %}
+      {% for ub in used_by %}
+      <tr>
+        {% if loop.first %}
+        <td class="fw-semibold" rowspan="{{ used_by | length }}">{{ net.get('name', '—') }}</td>
+        <td class="font-monospace" rowspan="{{ used_by | length }}">{{ iface }}</td>
+        <td class="font-monospace" rowspan="{{ used_by | length }}">
+          {% if vlans %}{{ vlans | join(', ') }}{% else %}—{% endif %}
+        </td>
+        {% endif %}
+        <td>{{ ub.get('deployment-name', '—') }}</td>
+        <td class="text-secondary">{{ ub.get('deployment-nic-id', '—') }}</td>
+      </tr>
+      {% endfor %}
+    {% else %}
+      <tr>
+        <td class="fw-semibold">{{ net.get('name', '—') }}</td>
+        <td class="font-monospace">{{ iface }}</td>
+        <td class="font-monospace">
+          {% if vlans %}{{ vlans | join(', ') }}{% else %}—{% endif %}
+        </td>
+        <td class="text-secondary">—</td>
+        <td class="text-secondary">—</td>
+      </tr>
+    {% endif %}
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="text-secondary small p-3 mb-0">No SR-IOV networks found.</p>
+{% endif %}

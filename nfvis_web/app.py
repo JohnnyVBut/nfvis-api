@@ -224,11 +224,35 @@ def htmx_deployments():
 def htmx_networks():
     api = _get_api()
     try:
-        data = api.get_network_list(brief=False)
-        app.logger.debug(f"all networks: {data}")
+        code, raw = api.query("get_networks_operational")
+        parsed = json.loads(raw)
+        all_nets = (
+            parsed.get("network:networks", {}).get("network", [])
+            or parsed.get("networks", {}).get("network", [])
+            or next(iter(parsed.values()), {}).get("network", [])
+        )
+        networks = [n for n in all_nets if not n.get("sriov")]
     except Exception:
-        data = []
-    return render_template("htmx/networks.html", networks=data)
+        networks = []
+    return render_template("htmx/networks.html", networks=networks)
+
+
+@app.get("/dashboard/sriov")
+@login_required
+def htmx_sriov():
+    api = _get_api()
+    try:
+        code, raw = api.query("get_networks_operational")
+        parsed = json.loads(raw)
+        all_nets = (
+            parsed.get("network:networks", {}).get("network", [])
+            or parsed.get("networks", {}).get("network", [])
+            or next(iter(parsed.values()), {}).get("network", [])
+        )
+        sriov = [n for n in all_nets if n.get("sriov")]
+    except Exception:
+        sriov = []
+    return render_template("htmx/sriov_networks.html", networks=sriov)
 
 
 @app.get("/dashboard/interfaces")
@@ -238,7 +262,6 @@ def htmx_interfaces():
     try:
         code, raw = api.query("get_ports")
         parsed = json.loads(raw)
-        app.logger.debug(f"get_ports full response: {parsed}")
         pnics = parsed.get("pnic:pnics", {}).get("pnic", [])
     except Exception:
         pnics = []
