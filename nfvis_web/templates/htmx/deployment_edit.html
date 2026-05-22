@@ -1,0 +1,88 @@
+<form id="editVmForm"
+      hx-post="/dashboard/deployments/{{ dep_name }}/edit"
+      hx-target="#toast-container"
+      hx-swap="beforeend">
+
+  <!-- Flavor -->
+  <div class="mb-3">
+    <label class="form-label fw-semibold small">Flavor</label>
+    <select name="flavor" class="form-select form-select-sm">
+      {% for f in flavors %}
+      <option value="{{ f }}" {% if f == current_flavor %}selected{% endif %}>{{ f }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- NICs -->
+  <div class="mb-3">
+    <label class="form-label fw-semibold small">Network Interfaces</label>
+    <div id="nic-list">
+      {% for nic in ifaces %}
+      <div class="nic-row d-flex align-items-center gap-2 mb-2">
+        <span class="badge bg-secondary text-center" style="min-width:3.5rem">NIC {{ loop.index0 }}</span>
+        <select name="network[]" class="form-select form-select-sm">
+          {% for net in networks %}
+          <option value="{{ net }}" {% if net == nic.network %}selected{% endif %}>{{ net }}</option>
+          {% endfor %}
+        </select>
+        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-1 flex-shrink-0"
+                onclick="removeNic(this)" title="Remove NIC">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-secondary mt-1"
+            onclick="addNic()">
+      <i class="bi bi-plus-lg me-1"></i>Add NIC
+    </button>
+  </div>
+
+  <!-- Warning -->
+  <div class="alert alert-warning small py-2 mb-3">
+    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+    Changing flavor or NICs will trigger a VM reboot.
+  </div>
+
+  <!-- Footer -->
+  <div class="d-flex justify-content-end gap-2">
+    <button type="button" class="btn btn-sm btn-secondary"
+            data-bs-dismiss="modal">Cancel</button>
+    <button type="submit" class="btn btn-sm btn-primary">
+      <i class="bi bi-check-lg me-1"></i>Save
+    </button>
+  </div>
+</form>
+
+<script>
+(function () {
+  var _nets = {{ networks | tojson }};
+
+  window.removeNic = function (btn) {
+    btn.closest('.nic-row').remove();
+    _renumber();
+  };
+
+  window.addNic = function () {
+    var list = document.getElementById('nic-list');
+    var idx  = list.querySelectorAll('.nic-row').length;
+    var opts = _nets.map(function (n) {
+      return '<option value="' + n + '">' + n + '</option>';
+    }).join('');
+    var row  = document.createElement('div');
+    row.className = 'nic-row d-flex align-items-center gap-2 mb-2';
+    row.innerHTML =
+      '<span class="badge bg-secondary text-center" style="min-width:3.5rem">NIC ' + idx + '</span>' +
+      '<select name="network[]" class="form-select form-select-sm">' + opts + '</select>' +
+      '<button type="button" class="btn btn-sm btn-outline-danger py-0 px-1 flex-shrink-0"' +
+      ' onclick="removeNic(this)" title="Remove NIC"><i class="bi bi-x-lg"></i></button>';
+    list.appendChild(row);
+  };
+
+  function _renumber() {
+    document.querySelectorAll('#nic-list .nic-row').forEach(function (row, i) {
+      row.querySelector('.badge').textContent = 'NIC ' + i;
+    });
+  }
+})();
+</script>

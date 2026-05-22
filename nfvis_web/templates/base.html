@@ -153,6 +153,19 @@
   </div>
 </div>
 
+<!-- ── Edit VM modal ──────────────────────────────────────────────── -->
+<div class="modal fade" id="editVmModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title" id="editVmModalTitle">Edit VM</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="editVmModalBody"></div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack-all.js"></script>
 
@@ -183,6 +196,28 @@ document.getElementById('addImageForm').addEventListener('submit', function () {
 // Reset form when modal is fully hidden
 document.getElementById('addImageModal').addEventListener('hidden.bs.modal', function () {
   document.getElementById('addImageForm').reset();
+});
+
+// Edit VM modal: load form via HTMX when shown
+document.getElementById('editVmModal').addEventListener('show.bs.modal', function (e) {
+  var name = e.relatedTarget && e.relatedTarget.getAttribute('data-vm-name');
+  if (!name) return;
+  document.getElementById('editVmModalTitle').textContent = 'Edit VM: ' + name;
+  document.getElementById('editVmModalBody').innerHTML =
+    '<div class="d-flex justify-content-center p-4"><div class="spinner-border text-secondary"></div></div>';
+  htmx.ajax('GET', '/dashboard/deployments/' + encodeURIComponent(name) + '/edit',
+            {target: '#editVmModalBody', swap: 'innerHTML'});
+});
+
+// Edit VM modal: close when form is submitted
+document.getElementById('editVmModal').addEventListener('submit', function () {
+  var modal = bootstrap.Modal.getInstance(this);
+  if (modal) modal.hide();
+});
+
+// Edit VM modal: clear body when fully hidden
+document.getElementById('editVmModal').addEventListener('hidden.bs.modal', function () {
+  document.getElementById('editVmModalBody').innerHTML = '';
 });
 
 // VM Action modal: set title, body, button style and hx-post URL

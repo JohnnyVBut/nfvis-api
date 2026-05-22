@@ -363,9 +363,14 @@ class API:
         logger.info(f"vm_action {action} → {vm_name}" + (" (graceful)" if graceful else ""))
         return self.query(command="vm_action", payload=json.dumps(payload))
 
-    def modify_vm_interfaces(self, vm_name: str, interfaces: list[dict]) -> tuple[int, str]:
+    def modify_vm_interfaces(
+        self,
+        vm_name: str,
+        interfaces: list[dict],
+        flavor: str = None,
+    ) -> tuple[int, str]:
         """
-        Change NIC-to-network assignments for a deployed VM.
+        Change NIC-to-network assignments (and optionally flavor) for a deployed VM.
 
         This is a **hot or cold update** depending on VM state:
         - VM is ACTIVE  → hot update, no reboot required.
@@ -379,6 +384,9 @@ class API:
             Deployment name (also used as vm_group name — always identical in NFVIS).
         interfaces : list[dict]
             Each dict must have ``nicid`` (int) and ``network`` (str).
+        flavor : str, optional
+            New flavor name. If provided, the VM flavor is updated together
+            with the interface list.
 
         Example
         -------
@@ -394,14 +402,39 @@ class API:
         as two separate path segments.  Because they are always the same value
         in NFVIS, we use vm_name for both and call _request() directly,
         bypassing the endpoint registry which supports only one path argument.
+
+        A preparatory PUT to the resource_group sub-resource is required before
+        the interface update — this resets resource reservations so that the
+        device accepts the new configuration.
         """
-        uri = (
+        base = (
             f"{self.url}/api/config/vm_lifecycle/tenants/tenant/admin"
-            f"/deployments/deployment/{vm_name}/vm_group/{vm_name}/interfaces"
+            f"/deployments/deployment/{vm_name}"
         )
-        payload = json.dumps({"interfaces": {"interface": interfaces}})
-        logger.info(f"modify_vm_interfaces {vm_name}: {len(interfaces)} NIC(s)")
-        return self._request("PUT", uri, payload, yang_type="data", form="json")
+
+        # Step 1: reset resource group (required before interface/flavor change)
+        rg_code, _ = self._request(
+            "PUT", f"{base}/resource_group", "{}", yang_type="data", form="json"
+        )
+        if rg_code not in (200, 201, 204):
+            logger.warning(f"modify_vm_interfaces: resource_group PUT returned {rg_code}")
+
+        # Step 2: update interfaces (and optionally flavor)
+        payload_dict: dict = {
+            "interfaces": {"interface": interfaces},
+            "vmexport_policy": {"disk_exclusion": []},
+        }
+        if flavor:
+            payload_dict["flavor"] = flavor
+
+        logger.info(
+            f"modify_vm_interfaces {vm_name}: {len(interfaces)} NIC(s)"
+            + (f", flavor={flavor}" if flavor else "")
+        )
+        return self._request(
+            "PUT", f"{base}/vm_group/{vm_name}/interfaces",
+            json.dumps(payload_dict), yang_type="data", form="json"
+        )
 
     def get_deployments(self, brief: bool = True, format: str = "json") -> str:
         logger.info("Getting deployments")

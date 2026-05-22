@@ -333,6 +333,60 @@ def dashboard_vm_action(name, action):
     return resp
 
 
+@app.get("/dashboard/deployments/<name>/edit")
+@login_required
+def htmx_deployment_edit(name):
+    api = _get_api()
+    try:
+        raw = api.get_deployments(brief=False)
+        deps = json.loads(raw).get("vmlc:deployments", {}).get("deployment", [])
+        dep = next((d for d in deps if d["name"] == name), None)
+        if dep is None:
+            return "<p class='text-danger small'>Deployment not found.</p>", 404
+        vg = dep.get("vm_group", [{}])[0]
+        current_flavor = vg.get("flavor", "")
+        ifaces = vg.get("interfaces", {}).get("interface", [])
+        if isinstance(ifaces, dict):
+            ifaces = [ifaces]
+        flavors  = api.get_flavor_list()
+        networks = api.get_network_list(brief=True)
+    except Exception as exc:
+        app.logger.warning(f"htmx_deployment_edit {name}: {exc}")
+        return f"<p class='text-danger small'>Error: {exc}</p>", 500
+    return render_template("htmx/deployment_edit.html",
+                           dep_name=name,
+                           current_flavor=current_flavor,
+                           ifaces=ifaces,
+                           flavors=flavors,
+                           networks=networks)
+
+
+@app.post("/dashboard/deployments/<name>/edit")
+@login_required
+def htmx_deployment_edit_save(name):
+    api = _get_api()
+    try:
+        flavor     = request.form.get("flavor", "").strip() or None
+        raw_nets   = request.form.getlist("network[]")
+        interfaces = [
+            {"nicid": i, "network": n.strip()}
+            for i, n in enumerate(raw_nets)
+            if n.strip()
+        ]
+        code, _ = api.modify_vm_interfaces(name, interfaces, flavor=flavor)
+        if code in (200, 201, 204):
+            category, message = "success", f"VM '{name}' updated."
+        else:
+            category, message = "danger", f"Update failed (HTTP {code})."
+    except Exception as exc:
+        category, message = "danger", str(exc)
+    resp = make_response(render_template("htmx/toast.html",
+                                         category=category, message=message))
+    if category == "success":
+        resp.headers["HX-Trigger"] = "refreshDeployments"
+    return resp
+
+
 @app.get("/dashboard/networks")
 @login_required
 def htmx_networks():

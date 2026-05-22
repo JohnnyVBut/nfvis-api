@@ -73,7 +73,15 @@
         <td class="text-end pe-2 text-nowrap">
           {% if transient %}
             {# No buttons during state transitions #}
-          {% elif active %}
+          {% else %}
+            <button class="btn btn-sm btn-outline-secondary py-0 px-1 me-1"
+                    data-bs-toggle="modal" data-bs-target="#editVmModal"
+                    data-vm-name="{{ dep.name }}"
+                    title="Edit VM">
+              <i class="bi bi-pencil"></i>
+            </button>
+          {% endif %}
+          {% if active %}
             <button class="btn btn-sm btn-outline-danger py-0 px-1 me-1"
                     data-vm-name="{{ dep.name }}" data-vm-action="STOP"
                     data-bs-toggle="modal" data-bs-target="#vmActionModal"
