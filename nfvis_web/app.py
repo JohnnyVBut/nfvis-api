@@ -225,6 +225,7 @@ def htmx_networks():
     api = _get_api()
     try:
         code, raw = api.query("get_networks_operational")
+        app.logger.debug(f"get_networks_operational code={code} raw={raw[:600]}")
         parsed = json.loads(raw)
         all_nets = (
             parsed.get("network:networks", {}).get("network", [])
@@ -232,7 +233,8 @@ def htmx_networks():
             or next(iter(parsed.values()), {}).get("network", [])
         )
         networks = [n for n in all_nets if not n.get("sriov")]
-    except Exception:
+    except Exception as exc:
+        app.logger.warning(f"get_networks_operational error: {exc}")
         networks = []
     return render_template("htmx/networks.html", networks=networks)
 
