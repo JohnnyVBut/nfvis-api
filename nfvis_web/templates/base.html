@@ -232,6 +232,23 @@ document.getElementById('editVmModal').addEventListener('submit', function () {
   });
 });
 
+// VNC Console: open in a new tab when the server sends the openConsole event
+document.body.addEventListener('openConsole', function (e) {
+  var url = e.detail && e.detail.url;
+  if (!url) return;
+  // Show a toast so the user knows the console is warming up
+  var toastHtml =
+    '<div class="toast align-items-center text-bg-info border-0" role="status">' +
+    '<div class="d-flex"><div class="toast-body">' +
+    '<i class="bi bi-display me-2"></i>Console starting — page will connect automatically.' +
+    '</div></div></div>';
+  var container = document.getElementById('toast-container');
+  container.insertAdjacentHTML('beforeend', toastHtml);
+  new bootstrap.Toast(container.lastElementChild, {delay: 8000}).show();
+  // Open immediately — noVNC has built-in retry that will keep trying until ready
+  window.open(url, '_blank', 'noopener,noreferrer');
+});
+
 // VM Action modal: set title, body, button style and hx-post URL
 document.getElementById('vmActionModal').addEventListener('show.bs.modal', function (e) {
   var btn = e.relatedTarget;

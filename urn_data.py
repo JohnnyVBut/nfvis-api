@@ -77,7 +77,7 @@ _ENDPOINTS: dict[str, _Endpoint] = {
     "deploy_vm":             _Endpoint("config/vm_lifecycle/tenants/tenant/admin/deployments",                  Method.POST,   "data"),
     "undeploy_vm":           _Endpoint("config/vm_lifecycle/tenants/tenant/admin/deployments/deployment",       Method.DELETE, "data"),
     "resource_precheck":     _Endpoint("operational/resources/precheck/vnf",                                    Method.GET,    "data"),
-    "vm_console":            _Endpoint("operations/vncconsole/start",                                           Method.POST,   "data"),
+    "vm_console":            _Endpoint("operations/vncconsole/start",                                           Method.POST,   "operation"),
     "vm_action":             _Endpoint("operations/vmAction",                                                   Method.POST,   "data",   append_argument=False),
     # Note: modify_vm_interfaces uses two path params (deployment + vm_group) and is handled
     # directly in API.modify_vm_interfaces() via _request(), bypassing the registry.

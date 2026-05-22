@@ -202,11 +202,27 @@ This div replaces `#deployments-body` every 3 seconds. Each reload includes a ne
 
 | VM state | Available actions |
 |---|---|
-| Active | ✏️ Edit · ⏹ Stop · 🔄 Reboot |
+| Active | 🖥 Console · ✏️ Edit · ⏹ Stop · 🔄 Reboot |
 | Stopped | ✏️ Edit · ▶️ Start |
 | Transient | _(no buttons)_ |
 
 All action buttons open a shared `#vmActionModal` with JS-populated title, body text and button color. Confirmed action fires `POST /dashboard/deployments/<name>/action/<action>`.
+
+**VNC Console (`GET /dashboard/deployments/<name>/console`):**
+
+Opens the VM's VNC console in a new browser tab. Flow:
+
+1. Flask calls `api.get_console(deployment, vm)` which POSTs to NFVIS `operations/vncconsole/start` with payload `{"input": {"deployment-name": name, "vm-name": name}}`
+2. NFVIS starts a WebSockify (noVNC) server on a dynamic HTTPS port and returns `{"vncconsole:output": {"vncconsole-url": ":6005/vnc_auto.html"}}`
+3. Flask constructs the absolute URL: `https://<hostname>:6005/vnc_auto.html`
+4. Returns HTTP 204 with `HX-Trigger: {"openConsole": {"url": "..."}}` header
+5. JS handler on `document.body` receives the event and calls `window.open(url, '_blank')`
+6. A blue info toast — *"Console starting — page will connect automatically"* — is shown immediately so the user knows the VNC is warming up
+7. The noVNC page has built-in WebSocket retry logic and connects automatically once WebSockify is ready (typically within 5-15 seconds)
+
+> **Important:** The VNC page must be opened over **HTTPS** — NFVIS only serves the noVNC HTML on its TLS port. Using `http://` causes an immediate connection reset. The self-signed certificate for the VNC port must have been accepted by the browser at least once (it shares the same cert as the management portal).
+
+> **YANG type note:** `operations/vncconsole/start` is an RPC endpoint and requires `Content-Type: application/vnd.yang.operation+json` (not `data`). The `vm_console` entry in `urn_data.py` uses `yang_type="operation"` accordingly.
 
 **VM Power actions (`POST /dashboard/deployments/<name>/action/<action>`):**
 - Supported: `START`, `STOP`, `REBOOT`
@@ -345,6 +361,7 @@ Cards that can affect other cards use HTMX custom events via `HX-Trigger` respon
 | `refreshImages` | image delete, image register status | `#images-table-area` (`hx-trigger="refreshImages from:body"`) |
 | `refreshDeployments` | VM action, VM edit, vmEdited JS handler | `#deployments-body` (`hx-trigger="refreshDeployments from:body"`) |
 | `vmEdited` | VM action success, VM edit success | JS handler → schedules delayed `refreshDeployments` |
+| `openConsole` | VNC console route (via `HX-Trigger` JSON) | JS handler → `window.open(url, '_blank')` + info toast |
 
 ---
 
@@ -438,6 +455,7 @@ nfvis_web/
 | VM action | `operational/vm_lifecycle/tenants/tenant/admin/deployments/deployment/<name>/action` | POST |
 | VM resource reset | `config/vm_lifecycle/.../deployment/<name>/resource_group` | PUT |
 | VM edit (NIC + flavor) | `config/vm_lifecycle/.../deployment/<name>/vm_group/<name>/interfaces` | PUT |
+| VNC console start | `operations/vncconsole/start` | POST |
 | Virtual Networks | `operational/networks/network` | GET |
 | Flavors | `config/vm_lifecycle/flavors?deep` | GET |
 | VLANs | `config/switch/vlan?deep` | GET |

@@ -84,6 +84,13 @@
             </button>
           {% endif %}
           {% if active %}
+            <button class="btn btn-sm btn-outline-info py-0 px-1 me-1"
+                    hx-get="{{ url_for('dashboard_vm_console', name=dep.name) }}"
+                    hx-target="#toast-container"
+                    hx-swap="beforeend"
+                    title="Open VNC Console">
+              <i class="bi bi-display"></i>
+            </button>
             <button class="btn btn-sm btn-outline-danger py-0 px-1 me-1"
                     data-vm-name="{{ dep.name }}" data-vm-action="STOP"
                     data-bs-toggle="modal" data-bs-target="#vmActionModal"

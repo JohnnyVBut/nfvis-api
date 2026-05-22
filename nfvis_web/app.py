@@ -423,6 +423,24 @@ def htmx_deployment_edit_save(name):
     return resp
 
 
+@app.get("/dashboard/deployments/<name>/console")
+@login_required
+def dashboard_vm_console(name):
+    api = _get_api()
+    try:
+        code, result = api.get_console(deployment=name, vm=name)
+        if code in (200, 201) and result.startswith("http"):
+            resp = make_response("", 204)
+            resp.headers["HX-Trigger"] = json.dumps({"openConsole": {"url": result}})
+            return resp
+        else:
+            return render_template("htmx/toast.html",
+                                   category="danger",
+                                   message=f"Console unavailable (HTTP {code}).")
+    except Exception as exc:
+        return render_template("htmx/toast.html", category="danger", message=str(exc))
+
+
 @app.get("/dashboard/networks")
 @login_required
 def htmx_networks():

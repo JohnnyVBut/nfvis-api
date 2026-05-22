@@ -9,6 +9,7 @@ import getpass
 import json
 import logging
 import time
+from urllib.parse import urlparse
 
 import requests
 import urllib3
@@ -702,8 +703,30 @@ class API:
     #  Console
     # ------------------------------------------------------------------
 
-    def get_console(self, deployment: str, vm: str, openurl: bool = False) -> tuple[int, str]:
-        payload = json.dumps({"deployment-name": deployment, "vm-name": vm})
-        code = self.query("vm_console", "", payload, "json")
-        time.sleep(5)
-        return code
+    def get_console(self, deployment: str, vm: str) -> tuple[int, str]:
+        """
+        Request a VNC console URL for a running VM.
+
+        Returns
+        -------
+        tuple[int, str]
+            ``(http_code, vnc_url)`` on success, where *vnc_url* is fully
+            qualified (e.g. ``https://172.30.200.8:6005/vnc_auto.html``).
+            On failure returns ``(http_code, raw_error_body)``.
+        """
+        payload = json.dumps({"input": {"deployment-name": deployment, "vm-name": vm}})
+        code, content = self.query("vm_console", "", payload, "json")
+        logger.debug(f"get_console raw response [{code}]: {content}")
+        if code not in (200, 201):
+            logger.warning(f"get_console {deployment}/{vm}: {code} {return_code(code)}")
+            return code, content
+        try:
+            relative_url = json.loads(content)["vncconsole:output"]["vncconsole-url"]
+            # relative_url is like ":6005/vnc_auto.html" — prepend https + hostname
+            hostname = urlparse(self.url).hostname
+            full_url = f"https://{hostname}{relative_url}"
+            logger.info(f"get_console {deployment}/{vm}: {full_url}")
+            return code, full_url
+        except (KeyError, json.JSONDecodeError) as exc:
+            logger.warning(f"get_console: failed to parse URL from response: {exc}")
+            return code, f"Error parsing console URL: {exc}"
