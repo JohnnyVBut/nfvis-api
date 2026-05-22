@@ -198,6 +198,15 @@ document.getElementById('addImageModal').addEventListener('hidden.bs.modal', fun
   document.getElementById('addImageForm').reset();
 });
 
+// After any VM action/edit: schedule two delayed refreshes as safety net
+document.body.addEventListener('vmEdited', function () {
+  [4000, 9000].forEach(function (delay) {
+    setTimeout(function () {
+      document.body.dispatchEvent(new Event('refreshDeployments'));
+    }, delay);
+  });
+});
+
 // Edit VM modal: load form via HTMX when shown
 document.getElementById('editVmModal').addEventListener('show.bs.modal', function (e) {
   var name = e.relatedTarget && e.relatedTarget.getAttribute('data-vm-name');

@@ -329,7 +329,7 @@ def dashboard_vm_action(name, action):
     resp = make_response(render_template("htmx/toast.html",
                                          category=category, message=message))
     if category == "success":
-        resp.headers["HX-Trigger"] = "refreshDeployments"
+        resp.headers["HX-Trigger"] = "refreshDeployments, vmEdited"
     return resp
 
 
@@ -419,7 +419,7 @@ def htmx_deployment_edit_save(name):
     resp = make_response(render_template("htmx/toast.html",
                                          category=category, message=message))
     if category == "success":
-        resp.headers["HX-Trigger"] = "refreshDeployments"
+        resp.headers["HX-Trigger"] = "refreshDeployments, vmEdited"
     return resp
 
 
