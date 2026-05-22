@@ -1,0 +1,27 @@
+{% set terminal = state in ('IMAGE_ACTIVE_STATE', 'IMAGE_ERROR_STATE', 'IMAGE_NOT_FOUND') %}
+<tr>
+  <td class="font-monospace">{{ name }}</td>
+  <td>
+    {% if state == 'IMAGE_ACTIVE_STATE' %}
+      <span class="badge bg-success">Active</span>
+    {% elif state == 'IMAGE_ERROR_STATE' %}
+      <span class="badge bg-danger">Error</span>
+    {% elif state == 'IMAGE_NOT_FOUND' %}
+      <span class="badge bg-secondary">Not found</span>
+    {% else %}
+      <span class="spinner-border spinner-border-sm text-primary me-1"></span>
+      <span class="text-secondary">{{ state }}</span>
+    {% endif %}
+  </td>
+  <td class="text-end pe-2">
+    {% if terminal %}
+    <button class="btn btn-sm btn-outline-danger py-0 px-1"
+            data-image-name="{{ name }}"
+            data-bs-toggle="modal"
+            data-bs-target="#deleteImageModal"
+            title="Delete image">
+      <i class="bi bi-trash"></i>
+    </button>
+    {% endif %}
+  </td>
+</tr>

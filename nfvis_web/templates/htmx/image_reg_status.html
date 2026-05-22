@@ -1,0 +1,22 @@
+{% if terminal %}
+  {% if state == 'IMAGE_ACTIVE_STATE' %}
+  <div class="alert alert-success py-2 mb-0 mt-2 small">
+    <i class="bi bi-check-circle me-1"></i>
+    Image <strong>{{ name }}</strong> registered successfully.
+  </div>
+  {% else %}
+  <div class="alert alert-danger py-2 mb-0 mt-2 small">
+    <i class="bi bi-x-circle me-1"></i>
+    <strong>{{ name }}</strong>: {{ state }}
+  </div>
+  {% endif %}
+{% else %}
+<div class="mt-2 small text-secondary d-flex align-items-center gap-2"
+     hx-get="/dashboard/images/status/{{ name }}"
+     hx-trigger="load delay:3s, every 5s"
+     hx-target="this"
+     hx-swap="outerHTML">
+  <span class="spinner-border spinner-border-sm text-primary flex-shrink-0"></span>
+  <span>{{ name }} — {{ state }}</span>
+</div>
+{% endif %}

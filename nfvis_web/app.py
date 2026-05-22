@@ -207,6 +207,77 @@ def htmx_images():
     return render_template("htmx/images.html", images=image_data)
 
 
+@app.delete("/dashboard/images/<name>")
+@login_required
+def dashboard_image_delete(name):
+    api = _get_api()
+    try:
+        code = api.unregister_image(name)
+        if code in (200, 204):
+            category, message = "success", f"Image '{name}' deleted."
+        else:
+            category, message = "danger", f"Delete failed (HTTP {code})."
+    except Exception as exc:
+        category, message = "danger", str(exc)
+    resp = make_response(render_template("htmx/toast.html",
+                                        category=category, message=message))
+    if category == "success":
+        resp.headers["HX-Trigger"] = "refreshImages"
+    return resp
+
+
+@app.post("/dashboard/images/register")
+@login_required
+def dashboard_image_register():
+    api = _get_api()
+    name      = request.form.get("name",      "").strip()
+    url       = request.form.get("url",       "").strip()
+    datastore = request.form.get("datastore", "").strip()
+    try:
+        payload = {"image": {
+            "name": name,
+            "src":  url,
+            "properties": {"property": {"name": "placement", "value": datastore}},
+        }}
+        code = api.register_image(json.dumps(payload))
+        if code not in (200, 201, 204):
+            return render_template("htmx/image_reg_status.html",
+                                   name=name,
+                                   state=f"Registration failed (HTTP {code})",
+                                   terminal=True)
+        state    = api.image_state(name)
+        terminal = state in ("IMAGE_ACTIVE_STATE", "IMAGE_ERROR_STATE")
+        resp     = make_response(render_template("htmx/image_reg_status.html",
+                                                 name=name, state=state,
+                                                 terminal=terminal))
+        if terminal and state == "IMAGE_ACTIVE_STATE":
+            resp.headers["HX-Trigger"] = "refreshImages"
+        return resp
+    except Exception as exc:
+        return render_template("htmx/image_reg_status.html",
+                               name=name, state=str(exc), terminal=True)
+
+
+@app.get("/dashboard/images/status/<name>")
+@login_required
+def dashboard_image_status(name):
+    api = _get_api()
+    try:
+        state = api.image_state(name)
+    except Exception as exc:
+        state = str(exc)
+    terminal = state in ("IMAGE_ACTIVE_STATE", "IMAGE_ERROR_STATE",
+                         "IMAGE_NOT_FOUND")
+    resp = make_response(render_template("htmx/image_reg_status.html",
+                                         name=name, state=state,
+                                         terminal=terminal))
+    if terminal and state == "IMAGE_ACTIVE_STATE":
+        resp.headers["HX-Trigger"] = "refreshImages"
+    return resp
+
+
+
+
 @app.get("/dashboard/deployments")
 @login_required
 def htmx_deployments():

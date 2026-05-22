@@ -82,14 +82,23 @@
   <div class="grid-stack-item" gs-id="images" gs-x="0" gs-y="5" gs-w="6" gs-h="6">
     <div class="grid-stack-item-content">
       <div class="card shadow-sm">
-        <div class="card-header fw-semibold">
-          <i class="bi bi-box-seam me-2 text-success"></i>VNF Images
+        <div class="card-header fw-semibold d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-box-seam me-2 text-success"></i>VNF Images</span>
+          <button class="btn btn-success btn-sm py-0 lh-1"
+                  data-bs-toggle="modal" data-bs-target="#addImageModal"
+                  title="Register image"
+                  onmousedown="event.stopPropagation()">
+            <i class="bi bi-plus-lg"></i>
+          </button>
         </div>
-        <div class="card-body p-0"
-             hx-get="{{ url_for('htmx_images') }}"
-             hx-trigger="load"
-             hx-swap="innerHTML">
-          {% include "htmx/_spinner.html" %}
+        <div class="card-body p-0 d-flex flex-column">
+          <div id="deploy-status-area"></div>
+          <div id="images-table-area"
+               hx-get="{{ url_for('htmx_images') }}"
+               hx-trigger="load, refreshImages from:body"
+               hx-swap="innerHTML">
+            {% include "htmx/_spinner.html" %}
+          </div>
         </div>
       </div>
     </div>

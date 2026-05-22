@@ -1,0 +1,11 @@
+<div class="toast align-items-center border-0
+            {% if category == 'success' %}text-bg-success
+            {% elif category == 'danger' %}text-bg-danger
+            {% else %}text-bg-secondary{% endif %}"
+     role="alert" aria-live="assertive">
+  <div class="d-flex">
+    <div class="toast-body">{{ message }}</div>
+    <button type="button" class="btn-close btn-close-white me-2 m-auto"
+            data-bs-dismiss="toast"></button>
+  </div>
+</div>

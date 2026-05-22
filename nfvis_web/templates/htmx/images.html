@@ -1,25 +1,42 @@
+{% set terminal_states = ('IMAGE_ACTIVE_STATE', 'IMAGE_ERROR_STATE', 'IMAGE_NOT_FOUND') %}
+
+{# Collect images currently deploying #}
+{% set ns = namespace(deploying=[]) %}
+{% for img in images %}
+  {% if img.state not in terminal_states %}
+    {% set ns.deploying = ns.deploying + [img] %}
+  {% endif %}
+{% endfor %}
+
+{# OOB: keep deploy-status-area in sync with actual deploying images #}
+<div id="deploy-status-area" hx-swap-oob="true">
+  {% for img in ns.deploying %}
+  <div class="px-3 py-2 border-bottom small text-secondary d-flex align-items-center gap-2"
+       hx-get="/dashboard/images/status/{{ img.name }}"
+       hx-trigger="load delay:5s, every 5s"
+       hx-target="this"
+       hx-swap="outerHTML">
+    <span class="spinner-border spinner-border-sm text-primary flex-shrink-0"></span>
+    <span>{{ img.name }} — {{ img.state }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+{# Main content: images table #}
 {% if images %}
 <table class="table table-sm table-hover mb-0 small">
   <thead class="table-light">
     <tr>
       <th>Name</th>
       <th>Status</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
     {% for img in images %}
-    <tr>
-      <td class="font-monospace">{{ img.name }}</td>
-      <td>
-        {% if img.state == 'IMAGE_ACTIVE_STATE' %}
-          <span class="badge bg-success">Active</span>
-        {% elif img.state == 'IMAGE_NOT_FOUND' %}
-          <span class="badge bg-secondary">Not found</span>
-        {% else %}
-          <span class="badge bg-warning text-dark">{{ img.state }}</span>
-        {% endif %}
-      </td>
-    </tr>
+      {% set name = img.name %}
+      {% set state = img.state %}
+      {% include "htmx/image_row.html" %}
     {% endfor %}
   </tbody>
 </table>
