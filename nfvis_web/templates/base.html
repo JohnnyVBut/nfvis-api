@@ -218,14 +218,18 @@ document.getElementById('editVmModal').addEventListener('show.bs.modal', functio
             {target: '#editVmModalBody', swap: 'innerHTML'});
 });
 
-// Edit VM modal: close when form is submitted
-// Note: we do NOT clear the modal body on hide — the form must stay in the
-// DOM so that HTMX can fire HX-Trigger events on it after the response
-// arrives (server-side PUT calls take 1-2s, longer than the hide animation).
-// The show.bs.modal handler replaces the body with a fresh spinner anyway.
+// Edit VM modal: close on submit and schedule deployment refreshes via JS.
+// We do NOT rely on HX-Trigger propagation from the form because the modal
+// is hidden before the server response arrives, making event bubbling
+// unreliable. Instead we dispatch refreshDeployments directly on body.
 document.getElementById('editVmModal').addEventListener('submit', function () {
   var modal = bootstrap.Modal.getInstance(this);
   if (modal) modal.hide();
+  [2000, 6000, 12000, 20000, 35000].forEach(function (delay) {
+    setTimeout(function () {
+      document.body.dispatchEvent(new CustomEvent('refreshDeployments', {bubbles: true}));
+    }, delay);
+  });
 });
 
 // VM Action modal: set title, body, button style and hx-post URL
