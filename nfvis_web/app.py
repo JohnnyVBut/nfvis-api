@@ -1,5 +1,6 @@
 """NFVIS Web UI — Flask application."""
 
+import importlib
 import json
 import sys
 import os
@@ -10,10 +11,24 @@ from flask import (
     url_for, make_response, abort,
 )
 
-# Make the sibling nfvis/ package importable
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
-from nfvis.nfvis import API
-from nfvis.models import Image, Network, Vlan, Vm
+# Dynamically resolve the parent package so this works regardless of
+# what the enclosing directory is named (nfvis, NFVIS_API, etc.)
+_here     = os.path.dirname(os.path.abspath(__file__))
+_pkg_dir  = os.path.dirname(_here)       # e.g. .../NFVIS_API
+_pkg_root = os.path.dirname(_pkg_dir)    # e.g. .../Python/NFVIS-API1
+_pkg_name = os.path.basename(_pkg_dir)   # e.g. "NFVIS_API" or "nfvis"
+
+sys.path.insert(0, _pkg_root)
+
+_nfvis_mod  = importlib.import_module(f"{_pkg_name}.nfvis")
+_models_mod = importlib.import_module(f"{_pkg_name}.models")
+
+API        = _nfvis_mod.API
+Image      = _models_mod.Image
+Network    = _models_mod.Network
+Vlan       = _models_mod.Vlan
+Vm         = _models_mod.Vm
+Switchport = _models_mod.Switchport
 
 import session_store
 
@@ -361,7 +376,6 @@ def config_switchport_modify():
     mode = request.form.get("mode", "").strip()
     vlan = request.form.get("vlan", "").strip()
     try:
-        from nfvis.models import Switchport
         swp  = Switchport(port=port, mode=mode, vlan=int(vlan) if vlan else None)
         code = api.swp_config_put(swp)
         result = ("success", f"Port {port} updated (HTTP {code}).")
