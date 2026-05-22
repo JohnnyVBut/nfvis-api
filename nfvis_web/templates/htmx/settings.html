@@ -17,7 +17,7 @@
 
   <dt class="col-5 text-secondary">Gateway</dt>
   <dd class="col-7 mb-1 font-monospace">
-    {{ data.get('gateway', data.get('default-gateway', '—')) }}
+    {{ data.get('gateway') or data.get('default-gateway') or data.get('default-gw') or '—' }}
   </dd>
 
   <dt class="col-5 text-secondary">DNS</dt>
@@ -43,7 +43,7 @@
   <div class="collapse" id="settings-extra">
     <dl class="row mb-0 small mt-2">
       {% set shown = ['hostname', 'mgmt-ip', 'mgmt', 'gateway', 'default-gateway',
-                      'dns-server', 'nameserver', 'dns'] %}
+                      'default-gw', 'dns-server', 'nameserver', 'dns'] %}
       {% for key, val in data.items() %}
         {% if key not in shown %}
           {% if val is string or val is number %}
