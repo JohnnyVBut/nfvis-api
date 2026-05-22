@@ -152,8 +152,15 @@ def htmx_diskspace():
     api = _get_api()
     try:
         code, raw = api.query("get_disk_space")
-        data = json.loads(raw).get("disk-space:disk-space", {})
-    except Exception:
+        app.logger.debug(f"disk-space raw response: {raw[:500]}")
+        parsed = json.loads(raw)
+        data = (
+            parsed.get("disk-space:disk-space")
+            or parsed.get("disk-space")
+            or next(iter(parsed.values()), {})
+        )
+    except Exception as exc:
+        app.logger.warning(f"disk-space error: {exc}")
         data = {}
     return render_template("htmx/diskspace.html", data=data)
 
