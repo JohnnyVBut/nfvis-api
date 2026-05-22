@@ -1,14 +1,46 @@
+{% set primary_keys = ['Manufacturer', 'PID', 'SN', 'UUID', 'Version',
+                       'CPU_Information', 'Memory_Information', 'Disk_Size'] %}
+
 {% if data %}
 <dl class="row mb-0 small">
   <dt class="col-5 text-secondary">Hostname</dt>
   <dd class="col-7 mb-1 fw-semibold">{{ hostname }}</dd>
-  {% for key, val in data.items() %}
-  {% if val is not mapping %}
-  <dt class="col-5 text-truncate text-secondary">{{ key }}</dt>
-  <dd class="col-7 mb-1">{{ val }}</dd>
+
+  {% for key in primary_keys %}
+  {% if data.get(key) %}
+  <dt class="col-5 text-truncate text-secondary">{{ key | replace('_', ' ') }}</dt>
+  <dd class="col-7 mb-1">{{ data[key] }}</dd>
   {% endif %}
   {% endfor %}
 </dl>
+
+{% set extra = {} %}
+{% for key, val in data.items() %}
+  {% if key not in primary_keys and val is not mapping %}
+    {% if extra.update({key: val}) %}{% endif %}
+  {% endif %}
+{% endfor %}
+
+{% if extra %}
+<div class="mt-2">
+  <button class="btn btn-link btn-sm p-0 text-secondary"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#platform-extra"
+          aria-expanded="false">
+    <i class="bi bi-chevron-down me-1"></i>Show more
+  </button>
+  <div class="collapse" id="platform-extra">
+    <dl class="row mb-0 small mt-2">
+      {% for key, val in extra.items() %}
+      <dt class="col-5 text-truncate text-secondary">{{ key | replace('_', ' ') }}</dt>
+      <dd class="col-7 mb-1">{{ val }}</dd>
+      {% endfor %}
+    </dl>
+  </div>
+</div>
+{% endif %}
+
 {% else %}
 <span class="text-secondary small">No platform data available.</span>
 {% endif %}

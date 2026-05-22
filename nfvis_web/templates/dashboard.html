@@ -24,7 +24,7 @@
       <div class="card-header fw-semibold">
         <i class="bi bi-device-hdd me-2 text-warning"></i>Disk Space
       </div>
-      <div class="card-body"
+      <div class="card-body p-0 scrollable"
            hx-get="{{ url_for('htmx_diskspace') }}"
            hx-trigger="load"
            hx-swap="innerHTML">
@@ -39,7 +39,7 @@
       <div class="card-header fw-semibold">
         <i class="bi bi-ethernet me-2 text-info"></i>Physical Interfaces
       </div>
-      <div class="card-body p-0"
+      <div class="card-body p-0 scrollable"
            hx-get="{{ url_for('htmx_interfaces') }}"
            hx-trigger="load"
            hx-swap="innerHTML">
@@ -58,7 +58,7 @@
       <div class="card-header fw-semibold">
         <i class="bi bi-box-seam me-2 text-success"></i>VNF Images
       </div>
-      <div class="card-body p-0"
+      <div class="card-body p-0 scrollable"
            hx-get="{{ url_for('htmx_images') }}"
            hx-trigger="load"
            hx-swap="innerHTML">
@@ -73,7 +73,7 @@
       <div class="card-header fw-semibold">
         <i class="bi bi-diagram-3 me-2 text-secondary"></i>Virtual Networks
       </div>
-      <div class="card-body p-0"
+      <div class="card-body p-0 scrollable"
            hx-get="{{ url_for('htmx_networks') }}"
            hx-trigger="load"
            hx-swap="innerHTML">
@@ -91,7 +91,7 @@
       <div class="card-header fw-semibold">
         <i class="bi bi-ethernet me-2 text-success"></i>Switch GigabitEthernet Ports
       </div>
-      <div class="card-body p-0"
+      <div class="card-body p-0 scrollable"
            hx-get="{{ url_for('htmx_switchports') }}"
            hx-trigger="load"
            hx-swap="innerHTML">
@@ -110,7 +110,7 @@
       <div class="card-header fw-semibold">
         <i class="bi bi-tag me-2 text-primary"></i>Switch VLANs
       </div>
-      <div class="card-body p-0"
+      <div class="card-body p-0 scrollable"
            hx-get="{{ url_for('htmx_vlans') }}"
            hx-trigger="load"
            hx-swap="innerHTML">
@@ -125,7 +125,7 @@
       <div class="card-header fw-semibold">
         <i class="bi bi-layers me-2 text-info"></i>Port-Channels
       </div>
-      <div class="card-body p-0"
+      <div class="card-body p-0 scrollable"
            hx-get="{{ url_for('htmx_portchannels') }}"
            hx-trigger="load"
            hx-swap="innerHTML">
@@ -137,13 +137,13 @@
 </div>
 
 <!-- VM Deployments -->
-<div class="row g-3">
+<div class="row g-3 mb-4">
   <div class="col-12">
     <div class="card shadow-sm">
       <div class="card-header fw-semibold">
         <i class="bi bi-pc-display me-2 text-danger"></i>VM Deployments
       </div>
-      <div class="card-body p-0"
+      <div class="card-body p-0 scrollable"
            hx-get="{{ url_for('htmx_deployments') }}"
            hx-trigger="load"
            hx-swap="innerHTML">
