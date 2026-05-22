@@ -179,7 +179,6 @@ def htmx_settings():
     api = _get_api()
     try:
         code, raw = api.query("get_settings")
-        app.logger.debug(f"get_settings raw response: {raw[:500]}")
         parsed = json.loads(raw)
         data = (
             parsed.get("system:settings")
@@ -318,7 +317,6 @@ def htmx_networks():
     api = _get_api()
     try:
         code, raw = api.query("get_networks_operational")
-        app.logger.debug(f"get_networks_operational code={code} raw={raw[:600]}")
         parsed = json.loads(raw)
         all_nets = (
             parsed.get("network:networks", {}).get("network", [])
