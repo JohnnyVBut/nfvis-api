@@ -90,7 +90,7 @@ _ENDPOINTS: dict[str, _Endpoint] = {
     "add_vlan":              _Endpoint("running/switch",                                                        Method.POST,   "data"),
     "del_vlan":              _Endpoint("running/switch/vlan",                                                   Method.DELETE, "data"),
     "show_interface_config": _Endpoint("running/switch/interface/gigabitEthernet",                              Method.GET,    "data",   suffix="/switchport"),
-    "get_all_swp_config":    _Endpoint("running/switch/interface/gigabitEthernet?deep",                          Method.GET,    "data",   append_argument=False),
+    "get_all_swp_config":    _Endpoint("running/switch/interface/gigabitEthernet?deep",                          Method.GET,    "collection", append_argument=False),
     "swp_config_put":        _Endpoint("running/switch/interface/gigabitEthernet",                              Method.PUT,    "data"),
     "swp_config_patch":      _Endpoint("running/switch/interface/gigabitEthernet",                              Method.PATCH,  "data"),
     "clear_allo_vlan":       _Endpoint("running/switch/interface/gigabitEthernet",                              Method.DELETE, "data",   suffix="/switchport/trunk/allowed/vlan/"),
