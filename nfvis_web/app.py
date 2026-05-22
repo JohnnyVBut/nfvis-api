@@ -311,6 +311,28 @@ def htmx_deployments():
     return render_template("htmx/deployments.html", deployments=deps)
 
 
+@app.post("/dashboard/deployments/<name>/action/<action>")
+@login_required
+def dashboard_vm_action(name, action):
+    api = _get_api()
+    labels = {"START": "started", "STOP": "stopped", "REBOOT": "rebooted"}
+    try:
+        code, _ = api.vm_action(vm_name=name, action=action)
+        if code in (200, 201, 204):
+            category = "success"
+            message  = f"VM '{name}' {labels.get(action, action.lower())}."
+        else:
+            category = "danger"
+            message  = f"Action failed (HTTP {code})."
+    except Exception as exc:
+        category, message = "danger", str(exc)
+    resp = make_response(render_template("htmx/toast.html",
+                                         category=category, message=message))
+    if category == "success":
+        resp.headers["HX-Trigger"] = "refreshDeployments"
+    return resp
+
+
 @app.get("/dashboard/networks")
 @login_required
 def htmx_networks():

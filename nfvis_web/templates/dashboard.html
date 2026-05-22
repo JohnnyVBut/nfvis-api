@@ -113,7 +113,7 @@
         </div>
         <div class="card-body p-0"
              hx-get="{{ url_for('htmx_deployments') }}"
-             hx-trigger="load"
+             hx-trigger="load, refreshDeployments from:body"
              hx-swap="innerHTML">
           {% include "htmx/_spinner.html" %}
         </div>

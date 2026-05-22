@@ -8,6 +8,7 @@
       <th>Image</th>
       <th>Flavor</th>
       <th>NICs</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
@@ -52,6 +53,35 @@
           {% else %}
             <span class="text-secondary">—</span>
           {% endfor %}
+        </td>
+        <td class="text-end pe-2 text-nowrap">
+          {% set active = svc == 'SERVICE_ACTIVE_STATE' %}
+          {% set stopped = svc == 'SERVICE_STOPPED_STATE' %}
+          {# Power button #}
+          {% if active %}
+          <button class="btn btn-sm btn-outline-danger py-0 px-1 me-1"
+                  data-vm-name="{{ dep.name }}" data-vm-action="STOP"
+                  data-bs-toggle="modal" data-bs-target="#vmActionModal"
+                  title="Stop VM">
+            <i class="bi bi-stop-fill"></i>
+          </button>
+          {% elif stopped %}
+          <button class="btn btn-sm btn-outline-success py-0 px-1 me-1"
+                  data-vm-name="{{ dep.name }}" data-vm-action="START"
+                  data-bs-toggle="modal" data-bs-target="#vmActionModal"
+                  title="Start VM">
+            <i class="bi bi-play-fill"></i>
+          </button>
+          {% endif %}
+          {# Reset button — only when active #}
+          {% if active %}
+          <button class="btn btn-sm btn-outline-warning py-0 px-1"
+                  data-vm-name="{{ dep.name }}" data-vm-action="REBOOT"
+                  data-bs-toggle="modal" data-bs-target="#vmActionModal"
+                  title="Reboot VM">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+          {% endif %}
         </td>
       </tr>
     {% endfor %}
