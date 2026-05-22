@@ -183,8 +183,7 @@ def htmx_deployments():
 def htmx_networks():
     api = _get_api()
     try:
-        nets = api.get_network_list(brief=False)
-        data = json.loads(nets).get("network:networks", {}).get("network", [])
+        data = api.get_network_list(brief=False)
     except Exception:
         data = []
     return render_template("htmx/networks.html", networks=data)
