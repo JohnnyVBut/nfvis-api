@@ -234,7 +234,7 @@ Opens the VM's VNC console in a new browser tab. Flow:
 Edit form loaded dynamically into `#editVmModal` when pencil is clicked. The `show.bs.modal` event triggers `htmx.ajax()` to load the form via HTMX.
 
 Form fields:
-- **Flavor** — filtered dropdown: only flavors where `source_image` matches the deployment's image AND `root_disk_mb` matches the current flavor's disk size
+- **Flavor** — filtered dropdown: only flavors where (`source_image` matches the deployment's current image OR `source_image` is empty/unset) AND `root_disk_mb` matches the current flavor's disk size. Empty `source_image` means the flavor was created manually and is considered compatible with any image.
 - **NICs** — list of current network assignments, each with a network dropdown and remove button; Add NIC button appends new rows; `name="network[]"` array form fields; server assigns nicid by position (0-based)
 
 Validation before save:
@@ -300,9 +300,16 @@ Data merged from two endpoints:
 
 Shows all VM flavors with full detail. Sources `config/vm_lifecycle/flavors?deep`.
 
-**Columns:** Name · Description · vCPU · RAM · Root Disk · Source Image
+**Columns:** Name · Description · vCPU · RAM · Root Disk · Source Image · Actions
 
 RAM and disk displayed in human-readable form (MB → GB when ≥ 1024 MB). `source_image` extracted from the nested `properties.property` list using Jinja2 `namespace` to work around loop variable scoping.
+
+**Flavor actions:**
+- **Create:** `+` button in card header → `#addFlavorModal`. The modal body is loaded dynamically via `htmx.ajax('GET', '/dashboard/flavors/new')` on open so the Source Image dropdown always reflects the current image list. Required fields: Name, vCPU, RAM (MB). Optional: Root Disk (GB, converted to MB server-side), Source Image, Description. Route: `POST /dashboard/flavors`.
+- **Delete:** trash button per row → `#deleteFlavorModal` → `DELETE /dashboard/flavors/<name>`. Confirmation required.
+- **Edit:** intentionally not supported — NFVIS API does not provide an update endpoint for flavors.
+
+Both create and delete fire `refreshFlavors` on success so the card reloads automatically.
 
 ---
 
@@ -335,9 +342,11 @@ All action responses (delete, register, power action, edit) return a Bootstrap t
 
 Toast colors: `bg-success` (green) · `bg-danger` (red) · `bg-secondary` (grey)
 
+**Toast deduplication:** The `htmx:afterSwap` handler marks each processed toast with `data-processed="1"` immediately. Subsequent HTMX swaps (e.g. card refreshes) also fire `htmx:afterSwap` and query `#toast-container` — the marker ensures already-shown toasts are never re-initialised. Each toast is also removed from the DOM when its `hidden.bs.toast` event fires, preventing it from being found again.
+
 ### Modals
 
-Four global Bootstrap modals in `base.html`, populated dynamically by JS:
+Six global Bootstrap modals in `base.html`, populated dynamically by JS:
 
 | Modal ID | Purpose | Trigger |
 |---|---|---|
@@ -345,12 +354,23 @@ Four global Bootstrap modals in `base.html`, populated dynamically by JS:
 | `#addImageModal` | Register new VNF image | + button in Images card header |
 | `#vmActionModal` | Confirm START/STOP/REBOOT | `data-vm-name` + `data-vm-action` on action buttons |
 | `#editVmModal` | Edit VM flavor and NICs | `data-vm-name` on pencil button |
+| `#addFlavorModal` | Create new flavor | + button in Flavors card header |
+| `#deleteFlavorModal` | Confirm flavor delete | `data-flavor-name` on trash button |
 
-**VM Action modal pattern:**
-`show.bs.modal` reads `data-vm-name` and `data-vm-action` from the triggering button, sets title/body/button class, updates `hx-post` URL on the confirm button, and calls `htmx.process()` to register the new HTMX attributes.
+**Standard confirm-action modal pattern** (delete image, delete flavor, VM actions):
+`show.bs.modal` reads the relevant `data-*` attribute from the triggering button, populates display text, and stores the target URL in `button._url`. The confirm button has a permanent `click` listener that calls `htmx.ajax()` with the stored URL. `data-bs-dismiss="modal"` closes the modal synchronously; the request fires independently. This avoids accumulating HTMX event listeners from repeated `htmx.process()` calls.
 
-**Edit VM modal pattern:**
-`show.bs.modal` sets the title and triggers `htmx.ajax('GET', ...)` to load the form fragment into `#editVmModalBody`. The form is loaded fresh on each open (spinner shown during load). Modal closes on submit; the form element intentionally stays in the DOM until the next open to avoid race conditions with in-flight HTMX requests.
+**Dynamic-form modal pattern** (add image, add flavor, edit VM):
+`show.bs.modal` triggers `htmx.ajax('GET', ...)` to load the form fragment fresh (spinner shown during load — always current data). Modal closes on `submit`; JS dispatches the relevant `refresh*` custom event on `document.body` after a short delay (bypasses `HX-Trigger` propagation which is unreliable after modal close).
+
+### Inactivity timer
+
+Client-side inactivity detection logs the user out after **10 minutes** of no mouse/keyboard/scroll activity:
+
+- **9 min:** `#inactivityModal` appears with a 60-second countdown
+- **10 min:** `window.location.href` redirects to `/logout`
+- Activity events (`click`, `keydown`, `mousemove`, `scroll`, `touchstart`) reset both timers; throttled to at most one reset per 10 seconds to avoid performance impact from continuous `mousemove`
+- Timer only active when `request.endpoint` is not `login`
 
 ### Cross-card refresh events
 
@@ -360,6 +380,7 @@ Cards that can affect other cards use HTMX custom events via `HX-Trigger` respon
 |---|---|---|
 | `refreshImages` | image delete, image register status | `#images-table-area` (`hx-trigger="refreshImages from:body"`) |
 | `refreshDeployments` | VM action, VM edit, vmEdited JS handler | `#deployments-body` (`hx-trigger="refreshDeployments from:body"`) |
+| `refreshFlavors` | flavor create, flavor delete | Flavors card body (`hx-trigger="refreshFlavors from:body"`) |
 | `vmEdited` | VM action success, VM edit success | JS handler → schedules delayed `refreshDeployments` |
 | `openConsole` | VNC console route (via `HX-Trigger` JSON) | JS handler → `window.open(url, '_blank')` + info toast |
 
@@ -433,7 +454,8 @@ nfvis_web/
         ├── vlans.html              # VLANs card
         ├── switchports.html        # GigabitEthernet switchports card
         ├── portchannels.html       # Port-channels card
-        └── flavors.html            # VM flavors card
+        ├── flavors.html            # VM flavors card
+        └── flavor_new.html         # Create flavor form (loaded dynamically into #addFlavorModal)
 ```
 
 ---
@@ -458,6 +480,8 @@ nfvis_web/
 | VNC console start | `operations/vncconsole/start` | POST |
 | Virtual Networks | `operational/networks/network` | GET |
 | Flavors | `config/vm_lifecycle/flavors?deep` | GET |
+| Flavor create | `config/vm_lifecycle/flavors` | POST |
+| Flavor delete | `config/vm_lifecycle/flavors/flavor/<name>` | DELETE |
 | VLANs | `config/switch/vlan?deep` | GET |
 | Switchports (config) | `config/switch/interface/gigabitEthernet` | GET |
 | Switchports (operational) | `operational/switch/interface/switchPort/gigabitEthernet` | GET |

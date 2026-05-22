@@ -225,6 +225,35 @@ class API:
         logger.error(f"Unable to get flavor list: {code} {return_code(code)}")
         return []
 
+    def create_flavor(
+        self,
+        name: str,
+        vcpus: int,
+        memory_mb: int,
+        root_disk_mb: int = 0,
+        source_image: str = "",
+        description: str = "",
+    ) -> tuple[int, str]:
+        flavor: dict = {"name": name, "vcpus": vcpus, "memory_mb": memory_mb}
+        if root_disk_mb:
+            flavor["root_disk_mb"] = root_disk_mb
+        if description:
+            flavor["description"] = description
+        if source_image:
+            flavor["properties"] = {
+                "property": [{"name": "source_image", "value": source_image}]
+            }
+        logger.info(f"Creating flavor {name} ({vcpus} vCPU, {memory_mb} MB RAM)")
+        return self.query("create_flavor", payload=json.dumps({"flavor": flavor}))
+
+    def delete_flavor(self, name: str) -> int:
+        code, _ = self.query("delete_flavor", argument=name)
+        if code in (200, 204):
+            logger.info(f"Flavor {name} deleted")
+        else:
+            logger.error(f"Unable to delete flavor {name}: {code} {return_code(code)}")
+        return code
+
     # ------------------------------------------------------------------
     #  VMs / deployments
     # ------------------------------------------------------------------

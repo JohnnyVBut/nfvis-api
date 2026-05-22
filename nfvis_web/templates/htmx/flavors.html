@@ -8,6 +8,7 @@
       <th>RAM</th>
       <th>Root Disk</th>
       <th>Source Image</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
@@ -35,6 +36,14 @@
         {% else %}—{% endif %}
       </td>
       <td class="font-monospace text-secondary">{{ ns.src_image or '—' }}</td>
+      <td class="text-end pe-2">
+        <button class="btn btn-sm btn-outline-danger py-0 px-1"
+                data-bs-toggle="modal" data-bs-target="#deleteFlavorModal"
+                data-flavor-name="{{ f.get('name') }}"
+                title="Delete flavor">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
     </tr>
     {% endfor %}
   </tbody>

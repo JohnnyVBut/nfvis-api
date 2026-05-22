@@ -69,6 +69,8 @@ _ENDPOINTS: dict[str, _Endpoint] = {
     "get_flavors":           _Endpoint("config/vm_lifecycle/flavors",                                           Method.GET,    "data"),
     "get_flavors_deep":      _Endpoint("config/vm_lifecycle/flavors?deep",                                      Method.GET,    "data",   append_argument=False),
     "get_flavor_info":       _Endpoint("config/vm_lifecycle/flavors/flavor",                                    Method.GET,    "data",   suffix="?deep"),
+    "create_flavor":         _Endpoint("config/vm_lifecycle/flavors",                                           Method.POST,   "data",   append_argument=False),
+    "delete_flavor":         _Endpoint("config/vm_lifecycle/flavors/flavor",                                    Method.DELETE, "data"),
 
     # --- Deployments / VMs ------------------------------------------------
     "get_deployments":       _Endpoint("config/vm_lifecycle/tenants/tenant/admin/deployments?deep",             Method.GET,    "data",   append_argument=False),

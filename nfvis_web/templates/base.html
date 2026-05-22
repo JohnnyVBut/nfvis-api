@@ -71,9 +71,6 @@
                 data-bs-dismiss="modal">Cancel</button>
         <button type="button" id="confirmDeleteBtn"
                 class="btn btn-sm btn-danger"
-                hx-delete=""
-                hx-target="#toast-container"
-                hx-swap="beforeend"
                 data-bs-dismiss="modal">
           <i class="bi bi-trash me-1"></i>Delete
         </button>
@@ -144,9 +141,6 @@
                 data-bs-dismiss="modal">Cancel</button>
         <button type="button" id="confirmVmActionBtn"
                 class="btn btn-sm"
-                hx-post=""
-                hx-target="#toast-container"
-                hx-swap="beforeend"
                 data-bs-dismiss="modal">Confirm</button>
       </div>
     </div>
@@ -166,25 +160,98 @@
   </div>
 </div>
 
+<!-- ── Delete Flavor modal ───────────────────────────────────────── -->
+<div class="modal fade" id="deleteFlavorModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title text-danger">
+          <i class="bi bi-trash me-2"></i>Delete Flavor
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body small">
+        Delete flavor <strong id="deleteFlavorNameDisplay"></strong>?
+        <br><span class="text-secondary">This cannot be undone.</span>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-secondary"
+                data-bs-dismiss="modal">Cancel</button>
+        <button type="button" id="confirmDeleteFlavorBtn"
+                class="btn btn-sm btn-danger"
+                data-bs-dismiss="modal">
+          <i class="bi bi-trash me-1"></i>Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add Flavor modal ───────────────────────────────────────────── -->
+<div class="modal fade" id="addFlavorModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title" style="color:#6f42c1">
+          <i class="bi bi-sliders2 me-2"></i>Create Flavor
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="addFlavorModalBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Inactivity warning modal ───────────────────────────────────── -->
+{% if request.endpoint not in ('login',) %}
+<div class="modal fade" id="inactivityModal" tabindex="-1"
+     data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header bg-warning-subtle">
+        <h6 class="modal-title">
+          <i class="bi bi-clock-history me-2"></i>Session expiring
+        </h6>
+      </div>
+      <div class="modal-body small">
+        No activity detected. You will be logged out in
+        <strong id="inactivityCountdown">60</strong> seconds.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-primary"
+                data-bs-dismiss="modal">Stay logged in</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack-all.js"></script>
 
 <script>
-// Auto-show Bootstrap toasts inserted by HTMX
+// Auto-show Bootstrap toasts inserted by HTMX.
+// Mark each toast as processed immediately so re-entrant htmx:afterSwap calls
+// (triggered by card refreshes) don't re-show already-handled toasts.
+// Remove the element from DOM after it hides so it can never resurface.
 document.body.addEventListener('htmx:afterSwap', function (e) {
-  e.detail.target.querySelectorAll('.toast').forEach(function (el) {
+  e.detail.target.querySelectorAll('.toast:not([data-processed])').forEach(function (el) {
+    el.setAttribute('data-processed', '1');
+    el.addEventListener('hidden.bs.toast', function () { el.remove(); });
     new bootstrap.Toast(el, { delay: 4000 }).show();
   });
 });
 
-// Delete modal: set image name + hx-delete URL
+// Delete modal: set image name and store URL on button
 document.getElementById('deleteImageModal').addEventListener('show.bs.modal', function (e) {
   var name = e.relatedTarget && e.relatedTarget.getAttribute('data-image-name');
   if (!name) return;
   document.getElementById('deleteImageNameDisplay').textContent = name;
-  var btn = document.getElementById('confirmDeleteBtn');
-  btn.setAttribute('hx-delete', '/dashboard/images/' + encodeURIComponent(name));
-  htmx.process(btn);
+  document.getElementById('confirmDeleteBtn')._url = '/dashboard/images/' + encodeURIComponent(name);
+});
+document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+  if (!this._url) return;
+  htmx.ajax('DELETE', this._url, {target: '#toast-container', swap: 'beforeend'});
 });
 
 // Close modal immediately when Register is submitted
@@ -232,6 +299,32 @@ document.getElementById('editVmModal').addEventListener('submit', function () {
   });
 });
 
+// Delete Flavor modal: set name and store URL on button
+document.getElementById('deleteFlavorModal').addEventListener('show.bs.modal', function (e) {
+  var name = e.relatedTarget && e.relatedTarget.getAttribute('data-flavor-name');
+  if (!name) return;
+  document.getElementById('deleteFlavorNameDisplay').textContent = name;
+  document.getElementById('confirmDeleteFlavorBtn')._url = '/dashboard/flavors/' + encodeURIComponent(name);
+});
+document.getElementById('confirmDeleteFlavorBtn').addEventListener('click', function () {
+  if (!this._url) return;
+  htmx.ajax('DELETE', this._url, {target: '#toast-container', swap: 'beforeend'});
+});
+
+// Add Flavor modal: load form dynamically (gets fresh image list)
+document.getElementById('addFlavorModal').addEventListener('show.bs.modal', function () {
+  document.getElementById('addFlavorModalBody').innerHTML =
+    '<div class="d-flex justify-content-center p-4"><div class="spinner-border text-secondary"></div></div>';
+  htmx.ajax('GET', '/dashboard/flavors/new', {target: '#addFlavorModalBody', swap: 'innerHTML'});
+});
+document.getElementById('addFlavorModal').addEventListener('submit', function () {
+  var modal = bootstrap.Modal.getInstance(this);
+  if (modal) modal.hide();
+  setTimeout(function () {
+    document.body.dispatchEvent(new CustomEvent('refreshFlavors', {bubbles: true}));
+  }, 1000);
+});
+
 // VNC Console: open in a new tab when the server sends the openConsole event
 document.body.addEventListener('openConsole', function (e) {
   var url = e.detail && e.detail.url;
@@ -249,14 +342,14 @@ document.body.addEventListener('openConsole', function (e) {
   window.open(url, '_blank', 'noopener,noreferrer');
 });
 
-// VM Action modal: set title, body, button style and hx-post URL
+// VM Action modal: set title, body, button style and store URL on button
 document.getElementById('vmActionModal').addEventListener('show.bs.modal', function (e) {
   var btn = e.relatedTarget;
   if (!btn) return;
   var vm     = btn.getAttribute('data-vm-name');
   var action = btn.getAttribute('data-vm-action');
-  var titles  = { START: 'Start VM', STOP: 'Stop VM', REBOOT: 'Reboot VM' };
-  var bodies  = {
+  var titles    = { START: 'Start VM', STOP: 'Stop VM', REBOOT: 'Reboot VM' };
+  var bodies    = {
     START:  'Start VM <strong>' + vm + '</strong>?',
     STOP:   'Stop VM <strong>' + vm + '</strong>?',
     REBOOT: 'Reboot VM <strong>' + vm + '</strong>?'
@@ -267,11 +360,70 @@ document.getElementById('vmActionModal').addEventListener('show.bs.modal', funct
   var confirm = document.getElementById('confirmVmActionBtn');
   confirm.className = 'btn btn-sm ' + (btnClasses[action] || 'btn-secondary');
   confirm.textContent = action.charAt(0) + action.slice(1).toLowerCase();
-  confirm.setAttribute('hx-post', '/dashboard/deployments/' + encodeURIComponent(vm) + '/action/' + action);
-  htmx.process(confirm);
+  confirm._url = '/dashboard/deployments/' + encodeURIComponent(vm) + '/action/' + action;
+});
+document.getElementById('confirmVmActionBtn').addEventListener('click', function () {
+  if (!this._url) return;
+  htmx.ajax('POST', this._url, {target: '#toast-container', swap: 'beforeend'});
 });
 </script>
 
 {% block scripts %}{% endblock %}
+
+{% if request.endpoint not in ('login',) %}
+<script>
+(function () {
+  var WARN_MS   = 9  * 60 * 1000;   // show warning at 9 min
+  var LOGOUT_MS = 10 * 60 * 1000;   // force logout at 10 min
+
+  var _warnTimer, _logoutTimer, _countdown;
+  var _actTs = 0;  // timestamp of last processed activity (for throttle)
+
+  function _reset() {
+    clearTimeout(_warnTimer);
+    clearTimeout(_logoutTimer);
+    clearInterval(_countdown);
+    // Hide warning modal if it is currently visible
+    var instance = bootstrap.Modal.getInstance(
+      document.getElementById('inactivityModal')
+    );
+    if (instance) instance.hide();
+    _warnTimer   = setTimeout(_warn,   WARN_MS);
+    _logoutTimer = setTimeout(_logout, LOGOUT_MS);
+  }
+
+  function _warn() {
+    var secs = 60;
+    document.getElementById('inactivityCountdown').textContent = secs;
+    _countdown = setInterval(function () {
+      secs -= 1;
+      var el = document.getElementById('inactivityCountdown');
+      if (el) el.textContent = secs < 0 ? 0 : secs;
+    }, 1000);
+    new bootstrap.Modal(document.getElementById('inactivityModal')).show();
+  }
+
+  function _logout() {
+    window.location.href = '{{ url_for("logout") }}';
+  }
+
+  // Throttled activity handler — resets the timer at most once per 10 s.
+  // Prevents hundreds of clearTimeout/setTimeout calls on rapid mousemove.
+  function _activity() {
+    var now = Date.now();
+    if (now - _actTs < 10000) return;
+    _actTs = now;
+    _reset();
+  }
+
+  ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'].forEach(function (e) {
+    document.addEventListener(e, _activity, { passive: true });
+  });
+
+  // Kick off on page load
+  _reset();
+})();
+</script>
+{% endif %}
 </body>
 </html>

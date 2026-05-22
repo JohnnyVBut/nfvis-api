@@ -125,12 +125,19 @@
   <div class="grid-stack-item" gs-id="flavors" gs-x="0" gs-y="23" gs-w="8" gs-h="5">
     <div class="grid-stack-item-content">
       <div class="card shadow-sm">
-        <div class="card-header fw-semibold">
-          <i class="bi bi-sliders2 me-2 text-purple" style="color:#6f42c1"></i>Flavors
+        <div class="card-header fw-semibold d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-sliders2 me-2" style="color:#6f42c1"></i>Flavors</span>
+          <button class="btn btn-sm py-0 lh-1"
+                  style="color:#6f42c1;border-color:#6f42c1"
+                  data-bs-toggle="modal" data-bs-target="#addFlavorModal"
+                  title="Create flavor"
+                  onmousedown="event.stopPropagation()">
+            <i class="bi bi-plus-lg"></i>
+          </button>
         </div>
         <div class="card-body p-0"
              hx-get="{{ url_for('htmx_flavors') }}"
-             hx-trigger="load"
+             hx-trigger="load, refreshFlavors from:body"
              hx-swap="innerHTML">
           {% include "htmx/_spinner.html" %}
         </div>

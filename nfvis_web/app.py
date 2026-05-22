@@ -374,10 +374,10 @@ def htmx_deployment_edit(name):
             None
         )
 
-        # Filter: same source_image AND same root_disk_mb
+        # Filter: (matching source_image OR empty source_image) AND same root_disk_mb
         flavors = [
             f.get("name") for f in all_flavors
-            if _src_image(f) == current_image
+            if (_src_image(f) == current_image or _src_image(f) == "")
             and (current_disk is None or f.get("root_disk_mb") == current_disk)
         ]
 
@@ -476,6 +476,70 @@ def htmx_sriov():
     except Exception:
         sriov = []
     return render_template("htmx/sriov_networks.html", networks=sriov)
+
+
+@app.get("/dashboard/flavors/new")
+@login_required
+def htmx_flavor_new():
+    api = _get_api()
+    try:
+        images = api.get_image_list()
+    except Exception:
+        images = []
+    return render_template("htmx/flavor_new.html", images=images)
+
+
+@app.post("/dashboard/flavors")
+@login_required
+def dashboard_flavor_create():
+    api = _get_api()
+    name         = request.form.get("name",         "").strip()
+    vcpus        = request.form.get("vcpus",        "").strip()
+    memory_mb    = request.form.get("memory_mb",    "").strip()
+    root_disk_gb = request.form.get("root_disk_gb", "").strip()
+    source_image = request.form.get("source_image", "").strip()
+    description  = request.form.get("description",  "").strip()
+    try:
+        if not name or not vcpus or not memory_mb:
+            raise ValueError("Name, vCPU and RAM are required.")
+        code, _ = api.create_flavor(
+            name=name,
+            vcpus=int(vcpus),
+            memory_mb=int(memory_mb),
+            root_disk_mb=int(root_disk_gb) * 1024 if root_disk_gb else 0,
+            source_image=source_image,
+            description=description,
+        )
+        if code in (200, 201, 204):
+            category, message = "success", f"Flavor '{name}' created."
+        else:
+            category, message = "danger", f"Create failed (HTTP {code})."
+    except Exception as exc:
+        category, message = "danger", str(exc)
+    resp = make_response(render_template("htmx/toast.html",
+                                         category=category, message=message))
+    if category == "success":
+        resp.headers["HX-Trigger"] = "refreshFlavors"
+    return resp
+
+
+@app.delete("/dashboard/flavors/<name>")
+@login_required
+def dashboard_flavor_delete(name):
+    api = _get_api()
+    try:
+        code = api.delete_flavor(name)
+        if code in (200, 204):
+            category, message = "success", f"Flavor '{name}' deleted."
+        else:
+            category, message = "danger", f"Delete failed (HTTP {code})."
+    except Exception as exc:
+        category, message = "danger", str(exc)
+    resp = make_response(render_template("htmx/toast.html",
+                                         category=category, message=message))
+    if category == "success":
+        resp.headers["HX-Trigger"] = "refreshFlavors"
+    return resp
 
 
 @app.get("/dashboard/flavors")
