@@ -133,8 +133,15 @@ def htmx_platform():
     api = _get_api()
     try:
         code, raw = api.query("get_platform_detail")
-        data = json.loads(raw).get("platform-detail:platform-detail", {})
-    except Exception:
+        app.logger.debug(f"platform-detail raw response: {raw[:500]}")
+        parsed = json.loads(raw)
+        data = (
+            parsed.get("platform-detail:platform-detail")
+            or parsed.get("platform-detail")
+            or next(iter(parsed.values()), {})
+        )
+    except Exception as exc:
+        app.logger.warning(f"platform-detail error: {exc}")
         data = {}
     return render_template("htmx/platform.html", data=data, hostname=api.hostname)
 
