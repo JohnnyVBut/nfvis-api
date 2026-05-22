@@ -1,187 +1,238 @@
 {% extends "base.html" %}
+
 {% block content %}
 
-<div class="row g-3 mb-3">
+<div class="d-flex justify-content-end mb-2">
+  <button class="btn btn-sm btn-outline-secondary" id="reset-layout-btn">
+    <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Layout
+  </button>
+</div>
 
-  <!-- Platform Info -->
-  <div class="col-md-6 col-xl-3">
-    <div class="card h-100 shadow-sm">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-cpu me-2 text-primary"></i>Platform
-      </div>
-      <div class="card-body"
-           hx-get="{{ url_for('htmx_platform') }}"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        {% include "htmx/_spinner.html" %}
+<div class="grid-stack">
+
+  <!-- Platform -->
+  <div class="grid-stack-item" gs-id="platform" gs-x="0" gs-y="0" gs-w="3" gs-h="5">
+    <div class="grid-stack-item-content">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">
+          <i class="bi bi-cpu me-2 text-primary"></i>Platform
+        </div>
+        <div class="card-body"
+             hx-get="{{ url_for('htmx_platform') }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          {% include "htmx/_spinner.html" %}
+        </div>
       </div>
     </div>
   </div>
 
   <!-- System Settings -->
-  <div class="col-md-6 col-xl-3">
-    <div class="card h-100 shadow-sm">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-sliders me-2 text-secondary"></i>System Settings
-      </div>
-      <div class="card-body"
-           hx-get="{{ url_for('htmx_settings') }}"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        {% include "htmx/_spinner.html" %}
+  <div class="grid-stack-item" gs-id="settings" gs-x="3" gs-y="0" gs-w="3" gs-h="5">
+    <div class="grid-stack-item-content">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">
+          <i class="bi bi-sliders me-2 text-secondary"></i>System Settings
+        </div>
+        <div class="card-body"
+             hx-get="{{ url_for('htmx_settings') }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          {% include "htmx/_spinner.html" %}
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Disk Space -->
-  <div class="col-md-6 col-xl-3">
-    <div class="card h-100 shadow-sm">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-device-hdd me-2 text-warning"></i>Disk Space
-      </div>
-      <div class="card-body p-0 scrollable"
-           hx-get="{{ url_for('htmx_diskspace') }}"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        {% include "htmx/_spinner.html" %}
+  <div class="grid-stack-item" gs-id="diskspace" gs-x="6" gs-y="0" gs-w="3" gs-h="5">
+    <div class="grid-stack-item-content">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">
+          <i class="bi bi-device-hdd me-2 text-warning"></i>Disk Space
+        </div>
+        <div class="card-body p-0"
+             hx-get="{{ url_for('htmx_diskspace') }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          {% include "htmx/_spinner.html" %}
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Physical Interfaces -->
-  <div class="col-md-6 col-xl-3">
-    <div class="card h-100 shadow-sm">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-ethernet me-2 text-info"></i>Physical Interfaces
+  <div class="grid-stack-item" gs-id="interfaces" gs-x="9" gs-y="0" gs-w="3" gs-h="5">
+    <div class="grid-stack-item-content">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">
+          <i class="bi bi-ethernet me-2 text-info"></i>Physical Interfaces
+        </div>
+        <div class="card-body p-0"
+             hx-get="{{ url_for('htmx_interfaces') }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          {% include "htmx/_spinner.html" %}
+        </div>
       </div>
-      <div class="card-body p-0 scrollable"
-           hx-get="{{ url_for('htmx_interfaces') }}"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        {% include "htmx/_spinner.html" %}
+    </div>
+  </div>
+
+  <!-- VNF Images -->
+  <div class="grid-stack-item" gs-id="images" gs-x="0" gs-y="5" gs-w="6" gs-h="6">
+    <div class="grid-stack-item-content">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">
+          <i class="bi bi-box-seam me-2 text-success"></i>VNF Images
+        </div>
+        <div class="card-body p-0"
+             hx-get="{{ url_for('htmx_images') }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          {% include "htmx/_spinner.html" %}
+        </div>
       </div>
     </div>
   </div>
 
-</div>
-
-<!-- VNF Images -->
-<div class="row g-3 mb-3">
-  <div class="col-12">
-    <div class="card shadow-sm">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-box-seam me-2 text-success"></i>VNF Images
-      </div>
-      <div class="card-body p-0 scrollable"
-           hx-get="{{ url_for('htmx_images') }}"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        {% include "htmx/_spinner.html" %}
+  <!-- VM Deployments -->
+  <div class="grid-stack-item" gs-id="deployments" gs-x="6" gs-y="5" gs-w="6" gs-h="6">
+    <div class="grid-stack-item-content">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">
+          <i class="bi bi-pc-display me-2 text-danger"></i>VM Deployments
+        </div>
+        <div class="card-body p-0"
+             hx-get="{{ url_for('htmx_deployments') }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          {% include "htmx/_spinner.html" %}
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Virtual Networks + SR-IOV -->
-<div class="row g-3 mb-3">
-
-  <!-- Networks -->
-  <div class="col-lg-4">
-    <div class="card shadow-sm">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-diagram-3 me-2 text-secondary"></i>Virtual Networks
-      </div>
-      <div class="card-body p-0 scrollable"
-           hx-get="{{ url_for('htmx_networks') }}"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        {% include "htmx/_spinner.html" %}
+  <!-- Virtual Networks -->
+  <div class="grid-stack-item" gs-id="networks" gs-x="0" gs-y="11" gs-w="4" gs-h="6">
+    <div class="grid-stack-item-content">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">
+          <i class="bi bi-diagram-3 me-2 text-secondary"></i>Virtual Networks
+        </div>
+        <div class="card-body p-0"
+             hx-get="{{ url_for('htmx_networks') }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          {% include "htmx/_spinner.html" %}
+        </div>
       </div>
     </div>
   </div>
 
   <!-- SR-IOV Networks -->
-  <div class="col-lg-8">
-    <div class="card shadow-sm">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-lightning me-2 text-warning"></i>SR-IOV Networks
-      </div>
-      <div class="card-body p-0 scrollable"
-           hx-get="{{ url_for('htmx_sriov') }}"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        {% include "htmx/_spinner.html" %}
+  <div class="grid-stack-item" gs-id="sriov" gs-x="4" gs-y="11" gs-w="8" gs-h="6">
+    <div class="grid-stack-item-content">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">
+          <i class="bi bi-lightning me-2 text-warning"></i>SR-IOV Networks
+        </div>
+        <div class="card-body p-0"
+             hx-get="{{ url_for('htmx_sriov') }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          {% include "htmx/_spinner.html" %}
+        </div>
       </div>
     </div>
   </div>
-
-</div>
-
-<!-- Switch: VLANs + Switchports + Port-Channels -->
-<div class="row g-3 mb-3">
 
   <!-- VLANs -->
-  <div class="col-lg-2">
-    <div class="card shadow-sm">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-tag me-2 text-primary"></i>VLANs
-      </div>
-      <div class="card-body p-0 scrollable"
-           hx-get="{{ url_for('htmx_vlans') }}"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        {% include "htmx/_spinner.html" %}
+  <div class="grid-stack-item" gs-id="vlans" gs-x="0" gs-y="17" gs-w="2" gs-h="6">
+    <div class="grid-stack-item-content">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">
+          <i class="bi bi-tag me-2 text-primary"></i>VLANs
+        </div>
+        <div class="card-body p-0"
+             hx-get="{{ url_for('htmx_vlans') }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          {% include "htmx/_spinner.html" %}
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Switchports (GigabitEthernet) -->
-  <div class="col-lg-6">
-    <div class="card shadow-sm">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-ethernet me-2 text-success"></i>GigabitEthernet Ports
-      </div>
-      <div class="card-body p-0 scrollable"
-           hx-get="{{ url_for('htmx_switchports') }}"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        {% include "htmx/_spinner.html" %}
+  <!-- GigabitEthernet Ports -->
+  <div class="grid-stack-item" gs-id="switchports" gs-x="2" gs-y="17" gs-w="6" gs-h="6">
+    <div class="grid-stack-item-content">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">
+          <i class="bi bi-ethernet me-2 text-success"></i>GigabitEthernet Ports
+        </div>
+        <div class="card-body p-0"
+             hx-get="{{ url_for('htmx_switchports') }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          {% include "htmx/_spinner.html" %}
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Port-Channels -->
-  <div class="col-lg-4">
-    <div class="card shadow-sm">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-layers me-2 text-info"></i>Port-Channels
-      </div>
-      <div class="card-body p-0 scrollable"
-           hx-get="{{ url_for('htmx_portchannels') }}"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        {% include "htmx/_spinner.html" %}
+  <div class="grid-stack-item" gs-id="portchannels" gs-x="8" gs-y="17" gs-w="4" gs-h="6">
+    <div class="grid-stack-item-content">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">
+          <i class="bi bi-layers me-2 text-info"></i>Port-Channels
+        </div>
+        <div class="card-body p-0"
+             hx-get="{{ url_for('htmx_portchannels') }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          {% include "htmx/_spinner.html" %}
+        </div>
       </div>
     </div>
   </div>
 
 </div>
+{% endblock %}
 
-<!-- VM Deployments -->
-<div class="row g-3 mb-4">
-  <div class="col-12">
-    <div class="card shadow-sm">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-pc-display me-2 text-danger"></i>VM Deployments
-      </div>
-      <div class="card-body p-0 scrollable"
-           hx-get="{{ url_for('htmx_deployments') }}"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        {% include "htmx/_spinner.html" %}
-      </div>
-    </div>
-  </div>
-</div>
+{% block scripts %}
+<script>
+(function () {
+    const STORAGE_KEY = 'nfvis-dashboard-layout-v1';
 
+    var grid = GridStack.init({
+        cellHeight: 70,
+        margin: 6,
+        animate: true,
+        handle: '.card-header',
+        float: true,
+    });
+
+    // Restore saved layout
+    var saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+        try {
+            grid.load(JSON.parse(saved), false);
+        } catch (e) {
+            localStorage.removeItem(STORAGE_KEY);
+        }
+    }
+
+    // Save on any change
+    grid.on('change', function () {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(grid.save(false)));
+    });
+
+    // Reset to defaults
+    document.getElementById('reset-layout-btn').addEventListener('click', function () {
+        localStorage.removeItem(STORAGE_KEY);
+        location.reload();
+    });
+})();
+</script>
 {% endblock %}

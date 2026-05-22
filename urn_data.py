@@ -55,7 +55,8 @@ _ENDPOINTS: dict[str, _Endpoint] = {
     "get_ports":             _Endpoint("operational/pnics?deep",                                                Method.GET,    "data",   append_argument=False),
     "get_banner":            _Endpoint("config/banner-motd",                                                    Method.GET,    "data"),
     "getUpgradeImageInfo":   _Endpoint("operational/system/upgrade/reg-info",                                   Method.GET,    "data"),
-    "showPortChannel":       _Endpoint("config/switch/interface/port-channel",                                  Method.GET,    "collection"),
+    "showPortChannel":           _Endpoint("config/switch/interface/port-channel",                              Method.GET,    "collection"),
+    "get_portchannel_status":    _Endpoint("operational/switch/interface/status/port-channel",                  Method.GET,    "collection", append_argument=False),
 
     # --- Images -----------------------------------------------------------
     "get_image_status":      _Endpoint("operational/vm_lifecycle/opdata/images/image",                          Method.GET,    "data"),
@@ -92,6 +93,7 @@ _ENDPOINTS: dict[str, _Endpoint] = {
     "del_vlan":              _Endpoint("running/switch/vlan",                                                   Method.DELETE, "data"),
     "show_interface_config": _Endpoint("running/switch/interface/gigabitEthernet",                              Method.GET,    "data",   suffix="/switchport"),
     "get_all_swp_config":    _Endpoint("running/switch/interface/gigabitEthernet?deep",                          Method.GET,    "collection", append_argument=False),
+    "get_swp_operational":   _Endpoint("operational/switch/interface/switchPort/gigabitEthernet",                 Method.GET,    "collection", append_argument=False),
     "swp_config_put":        _Endpoint("running/switch/interface/gigabitEthernet",                              Method.PUT,    "data"),
     "swp_config_patch":      _Endpoint("running/switch/interface/gigabitEthernet",                              Method.PATCH,  "data"),
     "clear_allo_vlan":       _Endpoint("running/switch/interface/gigabitEthernet",                              Method.DELETE, "data",   suffix="/switchport/trunk/allowed/vlan/"),

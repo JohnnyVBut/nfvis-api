@@ -5,6 +5,7 @@
       <th>Name</th>
       <th>Interface</th>
       <th>VLAN</th>
+      <th>Mode</th>
       <th>Deployment</th>
       <th>NIC ID</th>
     </tr>
@@ -25,6 +26,13 @@
         <td class="font-monospace" rowspan="{{ used_by | length }}">
           {% if vlans %}{{ vlans | join(', ') }}{% else %}—{% endif %}
         </td>
+        <td rowspan="{{ used_by | length }}">
+          {% if net.get('trunk') %}
+            <span class="badge bg-primary">Trunk</span>
+          {% else %}
+            <span class="badge bg-secondary">Access</span>
+          {% endif %}
+        </td>
         {% endif %}
         <td>{{ ub.get('deployment-name', '—') }}</td>
         <td class="text-secondary">{{ ub.get('deployment-nic-id', '—') }}</td>
@@ -36,6 +44,13 @@
         <td class="font-monospace">{{ iface }}</td>
         <td class="font-monospace">
           {% if vlans %}{{ vlans | join(', ') }}{% else %}—{% endif %}
+        </td>
+        <td>
+          {% if net.get('trunk') %}
+            <span class="badge bg-primary">Trunk</span>
+          {% else %}
+            <span class="badge bg-secondary">Access</span>
+          {% endif %}
         </td>
         <td class="text-secondary">—</td>
         <td class="text-secondary">—</td>

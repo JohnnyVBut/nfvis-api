@@ -3,39 +3,54 @@
   <thead class="table-light">
     <tr>
       <th>Interface</th>
+      <th>Description</th>
       <th>Mode</th>
-      <th>Access VLAN</th>
+      <th>VLAN</th>
       <th>Native VLAN</th>
       <th>Allowed VLANs</th>
-      <th>Status</th>
+      <th>Port-Channel</th>
+      <th>Link</th>
     </tr>
   </thead>
   <tbody>
     {% for port in switchports %}
-    {% set swp  = port.get('switchport', {}) %}
-    {% set mode = swp.get('mode', '—') %}
-    {% set acc  = swp.get('access', {}).get('vlan', '—') %}
-    {% set nat  = swp.get('trunk', {}).get('native', {}).get('vlan', '—') %}
-    {% set allowed = swp.get('trunk', {}).get('allowed', {}).get('vlan', {}).get('vlan-range', '—') %}
     <tr>
-      <td class="fw-semibold font-monospace">Gi{{ port.get('name', '—') }}</td>
+      <td class="fw-semibold font-monospace">Gi{{ port.name }}</td>
+      <td class="text-secondary">{{ port.description or '—' }}</td>
       <td>
-        {% if mode == 'trunk' %}
+        {% if port.mode == 'trunk' %}
           <span class="badge bg-primary">Trunk</span>
-        {% elif mode == 'access' %}
+        {% elif port.mode == 'access' %}
           <span class="badge bg-secondary">Access</span>
         {% else %}
-          <span class="text-secondary">{{ mode }}</span>
+          <span class="text-secondary">{{ port.mode }}</span>
         {% endif %}
       </td>
-      <td>{{ acc }}</td>
-      <td>{{ nat }}</td>
-      <td class="text-secondary font-monospace" style="font-size:0.78rem;">{{ allowed }}</td>
+      <td class="font-monospace">
+        {% if port.mode == 'access' %}{{ port.access_vlan }}{% else %}—{% endif %}
+      </td>
+      <td class="font-monospace">
+        {% if port.mode == 'trunk' %}{{ port.native_vlan }}{% else %}—{% endif %}
+      </td>
+      <td class="font-monospace" style="font-size:0.78rem;">
+        {% if port.mode == 'trunk' and port.allowed_vlans and port.allowed_vlans != 'None' %}
+          {{ port.allowed_vlans }}
+        {% else %}—{% endif %}
+      </td>
+      <td class="font-monospace">
+        {% if port.port_channel %}
+          <span class="badge bg-info text-dark">Po{{ port.port_channel }}</span>
+        {% else %}—{% endif %}
+      </td>
       <td>
-        {% if port.get('shutdown') %}
+        {% if port.shutdown %}
+          <span class="badge bg-secondary">Admin Down</span>
+        {% elif port.link == 'Up' %}
+          <span class="badge bg-success">Up</span>
+        {% elif port.link == 'Down' %}
           <span class="badge bg-danger">Down</span>
         {% else %}
-          <span class="badge bg-success">Up</span>
+          <span class="badge bg-secondary">{{ port.link }}</span>
         {% endif %}
       </td>
     </tr>

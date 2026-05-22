@@ -3,40 +3,58 @@
   <thead class="table-light">
     <tr>
       <th>Interface</th>
+      <th>Description</th>
       <th>Mode</th>
-      <th>Members</th>
-      <th>Status</th>
+      <th>Native VLAN</th>
+      <th>Allowed VLANs</th>
+      <th>Active Ports</th>
+      <th>Speed</th>
+      <th>Link</th>
     </tr>
   </thead>
   <tbody>
     {% for pc in portchannels %}
     <tr>
-      <td class="fw-semibold font-monospace">
-        Po{{ pc.get('name', pc.get('id', '—')) }}
-      </td>
-      <td>{{ pc.get('mode', pc.get('switchport', {}).get('mode', '—')) }}</td>
+      <td class="fw-semibold font-monospace">Po{{ pc.name }}</td>
+      <td class="text-secondary">{{ pc.description or '—' }}</td>
       <td>
-        {% set members = pc.get('member', pc.get('members', [])) %}
-        {% if members %}
-          {% if members is string %}
-            <span class="badge bg-secondary me-1">{{ members }}</span>
-          {% else %}
-            {% for m in members %}
-              <span class="badge bg-secondary me-1">
-                {{ m.get('interface', m.get('name', m)) if m is mapping else m }}
-              </span>
-            {% endfor %}
-          {% endif %}
+        {% if pc.mode == 'trunk' %}
+          <span class="badge bg-primary">Trunk</span>
+        {% elif pc.mode == 'access' %}
+          <span class="badge bg-secondary">Access</span>
+        {% else %}
+          <span class="text-secondary">{{ pc.mode }}</span>
+        {% endif %}
+      </td>
+      <td class="font-monospace">
+        {% if pc.mode == 'trunk' %}{{ pc.native_vlan }}{% else %}—{% endif %}
+      </td>
+      <td class="font-monospace small">
+        {% if pc.mode == 'trunk' %}
+          {{ pc.allowed_vlans }}
+        {% else %}
+          {{ pc.access_vlan }}
+        {% endif %}
+      </td>
+      <td class="font-monospace">
+        {% if pc.active_ports %}
+          {% for p in pc.active_ports.split(',') %}
+            <span class="badge bg-secondary me-1">{{ p.strip() }}</span>
+          {% endfor %}
         {% else %}
           <span class="text-secondary">—</span>
         {% endif %}
       </td>
+      <td class="text-secondary">
+        {% if pc.speed and pc.speed != '0' %}{{ pc.speed }} Mbps{% else %}—{% endif %}
+      </td>
       <td>
-        {% set status = pc.get('shutdown', None) %}
-        {% if status is none %}
+        {% if pc.link == 'Up' %}
           <span class="badge bg-success">Up</span>
-        {% else %}
+        {% elif pc.link == 'Down' %}
           <span class="badge bg-danger">Down</span>
+        {% else %}
+          <span class="badge bg-secondary">{{ pc.link }}</span>
         {% endif %}
       </td>
     </tr>
