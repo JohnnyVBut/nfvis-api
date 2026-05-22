@@ -338,6 +338,7 @@ def dashboard_vm_action(name, action):
 def htmx_deployment_edit(name):
     api = _get_api()
     try:
+        # Current deployment config
         raw = api.get_deployments(brief=False)
         deps = json.loads(raw).get("vmlc:deployments", {}).get("deployment", [])
         dep = next((d for d in deps if d["name"] == name), None)
@@ -345,10 +346,41 @@ def htmx_deployment_edit(name):
             return "<p class='text-danger small'>Deployment not found.</p>", 404
         vg = dep.get("vm_group", [{}])[0]
         current_flavor = vg.get("flavor", "")
+        current_image  = vg.get("image", "")
         ifaces = vg.get("interfaces", {}).get("interface", [])
         if isinstance(ifaces, dict):
             ifaces = [ifaces]
-        flavors  = api.get_flavor_list()
+
+        # All flavors with properties
+        _, raw_flavors = api.query("get_flavors_deep")
+        all_flavors = (json.loads(raw_flavors)
+                       .get("vmlc:flavors", {})
+                       .get("flavor", []))
+        if isinstance(all_flavors, dict):
+            all_flavors = [all_flavors]
+
+        def _src_image(f):
+            props = f.get("properties", {}).get("property", [])
+            if isinstance(props, dict):
+                props = [props]
+            for p in props:
+                if p.get("name") == "source_image":
+                    return p.get("value", "")
+            return ""
+
+        # Disk size of the current flavor (None if not found)
+        current_disk = next(
+            (f.get("root_disk_mb") for f in all_flavors if f.get("name") == current_flavor),
+            None
+        )
+
+        # Filter: same source_image AND same root_disk_mb
+        flavors = [
+            f.get("name") for f in all_flavors
+            if _src_image(f) == current_image
+            and (current_disk is None or f.get("root_disk_mb") == current_disk)
+        ]
+
         networks = api.get_network_list(brief=True)
     except Exception as exc:
         app.logger.warning(f"htmx_deployment_edit {name}: {exc}")
