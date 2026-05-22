@@ -12,6 +12,7 @@
     </tr>
   </thead>
   <tbody>
+    {% set ns = namespace(any_transient=false) %}
     {% for dep in deployments %}
       {% set vg = dep.get('vm_group', [{}])[0] %}
       {% set svc = dep.get('_svc_state', '') %}
@@ -19,6 +20,7 @@
       {% set active     = svc == 'SERVICE_ACTIVE_STATE' %}
       {% set stopped    = svc == 'SERVICE_STOPPED_STATE' %}
       {% set transient  = not active and not stopped %}
+      {% if transient and svc %}{% set ns.any_transient = true %}{% endif %}
       <tr>
         <td class="fw-semibold">{{ dep.name }}</td>
         <td>
@@ -44,11 +46,11 @@
             <span class="badge bg-secondary">Shutoff</span>
           {% elif vm == 'VM_ERROR_STATE' %}
             <span class="badge bg-danger">Error</span>
-          {% elif vm in ('VM_STARTING_STATE', 'VM_SHUTTING_DOWN_STATE', 'VM_REBOOTING_STATE') %}
+          {% elif vm in ('VM_STARTING_STATE', 'VM_SHUTTING_DOWN_STATE', 'VM_STOPPING_STATE', 'VM_REBOOTING_STATE') %}
             <span class="spinner-border spinner-border-sm text-primary me-1"></span>
             <span class="text-secondary">
               {% if vm == 'VM_STARTING_STATE' %}Starting
-              {% elif vm == 'VM_SHUTTING_DOWN_STATE' %}Stopping
+              {% elif vm in ('VM_SHUTTING_DOWN_STATE', 'VM_STOPPING_STATE') %}Stopping
               {% elif vm == 'VM_REBOOTING_STATE' %}Rebooting
               {% endif %}
             </span>
@@ -97,6 +99,13 @@
     {% endfor %}
   </tbody>
 </table>
+{% if ns.any_transient %}
+<div style="display:none"
+     hx-get="{{ url_for('htmx_deployments') }}"
+     hx-trigger="load delay:3s"
+     hx-target="#deployments-body"
+     hx-swap="innerHTML"></div>
+{% endif %}
 {% else %}
 <p class="text-secondary small p-3 mb-0">No deployments found.</p>
 {% endif %}

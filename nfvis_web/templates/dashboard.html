@@ -111,7 +111,7 @@
         <div class="card-header fw-semibold">
           <i class="bi bi-pc-display me-2 text-danger"></i>VM Deployments
         </div>
-        <div class="card-body p-0"
+        <div class="card-body p-0" id="deployments-body"
              hx-get="{{ url_for('htmx_deployments') }}"
              hx-trigger="load, refreshDeployments from:body"
              hx-swap="innerHTML">
