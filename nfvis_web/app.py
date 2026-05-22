@@ -273,11 +273,12 @@ def htmx_switchports():
         code, raw = api.query("get_all_swp_config")
         app.logger.debug(f"get_all_swp_config raw response: {raw[:500]}")
         parsed = json.loads(raw)
+        collection = parsed.get("collection", parsed)
         container = (
-            parsed.get("gigabitEthernet:gigabitEthernet")
-            or parsed.get("switch:gigabitEthernet")
-            or parsed.get("gigabitEthernet")
-            or next(iter(parsed.values()), [])
+            collection.get("switch:gigabitEthernet")
+            or collection.get("gigabitEthernet:gigabitEthernet")
+            or collection.get("gigabitEthernet")
+            or []
         )
         if isinstance(container, dict):
             container = [container]

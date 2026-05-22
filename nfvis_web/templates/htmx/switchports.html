@@ -32,7 +32,7 @@
       <td>{{ nat }}</td>
       <td class="text-secondary font-monospace" style="font-size:0.78rem;">{{ allowed }}</td>
       <td>
-        {% if port.get('shutdown') is not none and port.get('shutdown') is sameas false %}
+        {% if port.get('shutdown') %}
           <span class="badge bg-danger">Down</span>
         {% else %}
           <span class="badge bg-success">Up</span>
