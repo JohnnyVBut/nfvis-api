@@ -3,6 +3,8 @@
   <thead class="table-light">
     <tr>
       <th>Name</th>
+      <th>Status</th>
+      <th>VM State</th>
       <th>Image</th>
       <th>Flavor</th>
       <th>NICs</th>
@@ -11,8 +13,36 @@
   <tbody>
     {% for dep in deployments %}
       {% set vg = dep.get('vm_group', [{}])[0] %}
+      {% set svc = dep.get('_svc_state', '') %}
+      {% set vm  = dep.get('_vm_state',  '') %}
       <tr>
         <td class="fw-semibold">{{ dep.name }}</td>
+        <td>
+          {% if svc == 'SERVICE_ACTIVE_STATE' %}
+            <span class="badge bg-success">Active</span>
+          {% elif svc == 'SERVICE_STOPPED_STATE' %}
+            <span class="badge bg-secondary">Stopped</span>
+          {% elif svc == 'SERVICE_ERROR_STATE' %}
+            <span class="badge bg-danger">Error</span>
+          {% elif svc %}
+            <span class="badge bg-warning text-dark">{{ svc }}</span>
+          {% else %}
+            <span class="text-secondary">—</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if vm == 'VM_INERT_STATE' %}
+            <span class="badge bg-success">Running</span>
+          {% elif vm == 'VM_SHUTOFF_STATE' %}
+            <span class="badge bg-secondary">Shutoff</span>
+          {% elif vm == 'VM_ERROR_STATE' %}
+            <span class="badge bg-danger">Error</span>
+          {% elif vm %}
+            <span class="badge bg-warning text-dark">{{ vm }}</span>
+          {% else %}
+            <span class="text-secondary">—</span>
+          {% endif %}
+        </td>
         <td class="font-monospace">{{ vg.get('image', '—') }}</td>
         <td>{{ vg.get('flavor', '—') }}</td>
         <td>

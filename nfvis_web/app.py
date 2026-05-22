@@ -283,9 +283,31 @@ def dashboard_image_status(name):
 def htmx_deployments():
     api = _get_api()
     try:
-        raw  = api.get_deployments(brief=False)
-        deps = json.loads(raw).get("vmlc:deployments", {}).get("deployment", [])
-    except Exception:
+        # Config: image, flavor, NICs
+        raw_cfg = api.get_deployments(brief=False)
+        deps    = json.loads(raw_cfg).get("vmlc:deployments", {}).get("deployment", [])
+
+        # Operational: state
+        _, raw_op = api.query("get_deployments_opdata")
+        op_list   = (json.loads(raw_op)
+                     .get("collection", {})
+                     .get("vmlc:deployments", []))
+        if isinstance(op_list, dict):
+            op_list = [op_list]
+        op_by_name = {d.get("deployment_name"): d for d in op_list}
+
+        # Merge state into each deployment
+        for dep in deps:
+            op = op_by_name.get(dep.get("name"), {})
+            sm = op.get("state_machine", {})
+            dep["_svc_state"] = sm.get("state", "")
+            vm_sm = (sm.get("vm_state_machines", {})
+                       .get("vm_state_machine", [{}]))
+            if isinstance(vm_sm, dict):
+                vm_sm = [vm_sm]
+            dep["_vm_state"] = vm_sm[0].get("state", "") if vm_sm else ""
+    except Exception as exc:
+        app.logger.warning(f"htmx_deployments error: {exc}")
         deps = []
     return render_template("htmx/deployments.html", deployments=deps)
 
@@ -326,6 +348,23 @@ def htmx_sriov():
     except Exception:
         sriov = []
     return render_template("htmx/sriov_networks.html", networks=sriov)
+
+
+@app.get("/dashboard/flavors")
+@login_required
+def htmx_flavors():
+    api = _get_api()
+    try:
+        _, raw = api.query("get_flavors_deep")
+        flavors = (json.loads(raw)
+                   .get("vmlc:flavors", {})
+                   .get("flavor", []))
+        if isinstance(flavors, dict):
+            flavors = [flavors]
+    except Exception as exc:
+        app.logger.warning(f"htmx_flavors error: {exc}")
+        flavors = []
+    return render_template("htmx/flavors.html", flavors=flavors)
 
 
 @app.get("/dashboard/interfaces")

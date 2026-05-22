@@ -1,0 +1,44 @@
+{% if flavors %}
+<table class="table table-sm table-hover mb-0 small">
+  <thead class="table-light">
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>vCPU</th>
+      <th>RAM</th>
+      <th>Root Disk</th>
+      <th>Source Image</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for f in flavors %}
+    {% set props = f.get('properties', {}).get('property', []) %}
+    {% if props is mapping %}{% set props = [props] %}{% endif %}
+    {% set ns = namespace(src_image='') %}
+    {% for p in props %}
+      {% if p.get('name') == 'source_image' %}{% set ns.src_image = p.get('value', '') %}{% endif %}
+    {% endfor %}
+    <tr>
+      <td class="fw-semibold">{{ f.get('name', '—') }}</td>
+      <td class="text-secondary">{{ f.get('description', '—') }}</td>
+      <td class="text-center">{{ f.get('vcpus', '—') }}</td>
+      <td class="font-monospace">
+        {% set ram = f.get('memory_mb', 0) %}
+        {% if ram >= 1024 %}{{ (ram / 1024) | round(1) | int }} GB
+        {% elif ram %}{{ ram }} MB
+        {% else %}—{% endif %}
+      </td>
+      <td class="font-monospace">
+        {% set disk = f.get('root_disk_mb', 0) %}
+        {% if disk >= 1024 %}{{ (disk / 1024) | round(0) | int }} GB
+        {% elif disk %}{{ disk }} MB
+        {% else %}—{% endif %}
+      </td>
+      <td class="font-monospace text-secondary">{{ ns.src_image or '—' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="text-secondary small p-3 mb-0">No flavors defined.</p>
+{% endif %}

@@ -121,6 +121,23 @@
     </div>
   </div>
 
+  <!-- Flavors -->
+  <div class="grid-stack-item" gs-id="flavors" gs-x="0" gs-y="23" gs-w="8" gs-h="5">
+    <div class="grid-stack-item-content">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">
+          <i class="bi bi-sliders2 me-2 text-purple" style="color:#6f42c1"></i>Flavors
+        </div>
+        <div class="card-body p-0"
+             hx-get="{{ url_for('htmx_flavors') }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          {% include "htmx/_spinner.html" %}
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Virtual Networks -->
   <div class="grid-stack-item" gs-id="networks" gs-x="0" gs-y="11" gs-w="4" gs-h="6">
     <div class="grid-stack-item-content">
