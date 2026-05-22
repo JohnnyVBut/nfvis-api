@@ -237,7 +237,9 @@ def htmx_interfaces():
     api = _get_api()
     try:
         code, raw = api.query("get_ports")
-        pnics = json.loads(raw).get("pnic:pnics", {}).get("pnic", [])
+        parsed = json.loads(raw)
+        app.logger.debug(f"get_ports full response: {parsed}")
+        pnics = parsed.get("pnic:pnics", {}).get("pnic", [])
     except Exception:
         pnics = []
     return render_template("htmx/interfaces.html", interfaces=pnics)
