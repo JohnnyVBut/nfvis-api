@@ -215,6 +215,50 @@ def htmx_interfaces():
     return render_template("htmx/interfaces.html", interfaces=pnics)
 
 
+@app.get("/dashboard/vlans")
+@login_required
+def htmx_vlans():
+    api = _get_api()
+    try:
+        code, raw = api.query("show_vlan")
+        app.logger.debug(f"show_vlan raw response: {raw[:500]}")
+        parsed = json.loads(raw)
+        vlans = (
+            parsed.get("vlan:vlan")
+            or parsed.get("switch:vlan")
+            or parsed.get("vlan")
+            or next(iter(parsed.values()), [])
+        )
+        if isinstance(vlans, dict):
+            vlans = vlans.get("vlan-id", vlans.get("vlan", []))
+    except Exception as exc:
+        app.logger.warning(f"show_vlan error: {exc}")
+        vlans = []
+    return render_template("htmx/vlans.html", vlans=vlans)
+
+
+@app.get("/dashboard/portchannels")
+@login_required
+def htmx_portchannels():
+    api = _get_api()
+    try:
+        code, raw = api.query("showPortChannel")
+        app.logger.debug(f"showPortChannel raw response: {raw[:500]}")
+        parsed = json.loads(raw)
+        portchannels = (
+            parsed.get("port-channel:port-channel")
+            or parsed.get("switch:port-channel")
+            or parsed.get("port-channel")
+            or next(iter(parsed.values()), [])
+        )
+        if isinstance(portchannels, dict):
+            portchannels = [portchannels]
+    except Exception as exc:
+        app.logger.warning(f"showPortChannel error: {exc}")
+        portchannels = []
+    return render_template("htmx/portchannels.html", portchannels=portchannels)
+
+
 # ---------------------------------------------------------------------------
 #  Configuration
 # ---------------------------------------------------------------------------

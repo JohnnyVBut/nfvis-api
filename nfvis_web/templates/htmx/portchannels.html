@@ -1,0 +1,48 @@
+{% if portchannels %}
+<table class="table table-sm table-hover mb-0 small">
+  <thead class="table-light">
+    <tr>
+      <th>Interface</th>
+      <th>Mode</th>
+      <th>Members</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for pc in portchannels %}
+    <tr>
+      <td class="fw-semibold font-monospace">
+        Po{{ pc.get('name', pc.get('id', '—')) }}
+      </td>
+      <td>{{ pc.get('mode', pc.get('switchport', {}).get('mode', '—')) }}</td>
+      <td>
+        {% set members = pc.get('member', pc.get('members', [])) %}
+        {% if members %}
+          {% if members is string %}
+            <span class="badge bg-secondary me-1">{{ members }}</span>
+          {% else %}
+            {% for m in members %}
+              <span class="badge bg-secondary me-1">
+                {{ m.get('interface', m.get('name', m)) if m is mapping else m }}
+              </span>
+            {% endfor %}
+          {% endif %}
+        {% else %}
+          <span class="text-secondary">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% set status = pc.get('shutdown', None) %}
+        {% if status is none %}
+          <span class="badge bg-success">Up</span>
+        {% else %}
+          <span class="badge bg-danger">Down</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="text-secondary small p-3 mb-0">No port-channels configured.</p>
+{% endif %}

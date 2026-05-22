@@ -84,6 +84,41 @@
 
 </div>
 
+<!-- Switch: VLANs + Port-Channels -->
+<div class="row g-3 mb-3">
+
+  <!-- VLANs -->
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-tag me-2 text-primary"></i>Switch VLANs
+      </div>
+      <div class="card-body p-0"
+           hx-get="{{ url_for('htmx_vlans') }}"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        {% include "htmx/_spinner.html" %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Port-Channels -->
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-layers me-2 text-info"></i>Port-Channels
+      </div>
+      <div class="card-body p-0"
+           hx-get="{{ url_for('htmx_portchannels') }}"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        {% include "htmx/_spinner.html" %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
 <!-- VM Deployments -->
 <div class="row g-3">
   <div class="col-12">

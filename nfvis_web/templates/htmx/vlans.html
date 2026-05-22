@@ -1,0 +1,33 @@
+{% if vlans %}
+<table class="table table-sm table-hover mb-0 small">
+  <thead class="table-light">
+    <tr>
+      <th>VLAN ID</th>
+      <th>Name</th>
+      <th>State</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for vlan in vlans %}
+    <tr>
+      <td class="fw-semibold">{{ vlan.get('vlan-id', vlan.get('id', '—')) }}</td>
+      <td>{{ vlan.get('name', '—') }}</td>
+      <td>
+        {% set state = vlan.get('state', vlan.get('status', '')) | lower %}
+        {% if 'active' in state %}
+          <span class="badge bg-success">Active</span>
+        {% elif 'suspend' in state %}
+          <span class="badge bg-warning text-dark">Suspended</span>
+        {% elif state %}
+          <span class="badge bg-secondary">{{ state }}</span>
+        {% else %}
+          <span class="text-secondary">—</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="text-secondary small p-3 mb-0">No VLANs found.</p>
+{% endif %}
