@@ -373,6 +373,10 @@ def htmx_deployment_edit_save(name):
             for i, n in enumerate(raw_nets)
             if n.strip()
         ]
+        if flavor:
+            available_flavors = api.get_flavor_list()
+            if flavor not in available_flavors:
+                raise ValueError(f"Flavor '{flavor}' not found on device.")
         code, _ = api.modify_vm_interfaces(name, interfaces, flavor=flavor)
         if code in (200, 201, 204):
             category, message = "success", f"VM '{name}' updated."
