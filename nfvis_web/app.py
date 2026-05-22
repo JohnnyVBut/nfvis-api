@@ -225,6 +225,8 @@ def htmx_networks():
     api = _get_api()
     try:
         data = api.get_network_list(brief=False)
+        if data:
+            app.logger.debug(f"networks[0] sample: {data[0]}")
     except Exception:
         data = []
     return render_template("htmx/networks.html", networks=data)
