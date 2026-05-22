@@ -1,0 +1,60 @@
+{% if data %}
+{% set mgmt = data.get('mgmt-ip', data.get('mgmt', {})) %}
+{% set dns  = data.get('dns-server', data.get('nameserver', [])) %}
+
+<dl class="row mb-0 small">
+  <dt class="col-5 text-secondary">Hostname</dt>
+  <dd class="col-7 mb-1 fw-semibold">{{ data.get('hostname', '—') }}</dd>
+
+  <dt class="col-5 text-secondary">Mgmt IP</dt>
+  <dd class="col-7 mb-1 font-monospace">
+    {{ mgmt.get('address', mgmt) if mgmt is mapping else (data.get('ip', '—')) }}
+  </dd>
+
+  <dt class="col-5 text-secondary">Mask</dt>
+  <dd class="col-7 mb-1 font-monospace">
+    {{ mgmt.get('netmask', mgmt.get('mask', data.get('netmask', '—'))) if mgmt is mapping else '—' }}
+  </dd>
+
+  <dt class="col-5 text-secondary">Gateway</dt>
+  <dd class="col-7 mb-1 font-monospace">
+    {{ data.get('gateway', data.get('default-gateway', '—')) }}
+  </dd>
+
+  <dt class="col-5 text-secondary">DNS</dt>
+  <dd class="col-7 mb-1 font-monospace">
+    {% if dns is string %}
+      {{ dns }}
+    {% elif dns is iterable %}
+      {{ dns | join(', ') }}
+    {% else %}
+      {{ data.get('dns', '—') }}
+    {% endif %}
+  </dd>
+</dl>
+
+<div class="mt-2">
+  <button class="btn btn-link btn-sm p-0 text-secondary"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#settings-extra"
+          aria-expanded="false">
+    <i class="bi bi-chevron-down me-1"></i>Show more
+  </button>
+  <div class="collapse" id="settings-extra">
+    <dl class="row mb-0 small mt-2">
+      {% set shown = ['hostname', 'mgmt-ip', 'mgmt', 'ip', 'netmask', 'gateway',
+                      'default-gateway', 'dns-server', 'nameserver', 'dns'] %}
+      {% for key, val in data.items() %}
+        {% if key not in shown and val is not mapping and val is not iterable or val is string %}
+        <dt class="col-5 text-truncate text-secondary">{{ key }}</dt>
+        <dd class="col-7 mb-1">{{ val }}</dd>
+        {% endif %}
+      {% endfor %}
+    </dl>
+  </div>
+</div>
+
+{% else %}
+<span class="text-secondary small">No settings data available.</span>
+{% endif %}

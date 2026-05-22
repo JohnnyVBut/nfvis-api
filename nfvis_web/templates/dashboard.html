@@ -4,7 +4,7 @@
 <div class="row g-3 mb-3">
 
   <!-- Platform Info -->
-  <div class="col-md-6 col-xl-4">
+  <div class="col-md-6 col-xl-3">
     <div class="card h-100 shadow-sm">
       <div class="card-header fw-semibold">
         <i class="bi bi-cpu me-2 text-primary"></i>Platform
@@ -18,8 +18,23 @@
     </div>
   </div>
 
+  <!-- System Settings -->
+  <div class="col-md-6 col-xl-3">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-sliders me-2 text-secondary"></i>System Settings
+      </div>
+      <div class="card-body"
+           hx-get="{{ url_for('htmx_settings') }}"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        {% include "htmx/_spinner.html" %}
+      </div>
+    </div>
+  </div>
+
   <!-- Disk Space -->
-  <div class="col-md-6 col-xl-4">
+  <div class="col-md-6 col-xl-3">
     <div class="card h-100 shadow-sm">
       <div class="card-header fw-semibold">
         <i class="bi bi-device-hdd me-2 text-warning"></i>Disk Space
@@ -34,7 +49,7 @@
   </div>
 
   <!-- Physical Interfaces -->
-  <div class="col-md-12 col-xl-4">
+  <div class="col-md-6 col-xl-3">
     <div class="card h-100 shadow-sm">
       <div class="card-header fw-semibold">
         <i class="bi bi-ethernet me-2 text-info"></i>Physical Interfaces
@@ -70,8 +85,15 @@
   <!-- Networks -->
   <div class="col-lg-6">
     <div class="card shadow-sm">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-diagram-3 me-2 text-secondary"></i>Virtual Networks
+      <div class="card-header fw-semibold d-flex align-items-center">
+        <span><i class="bi bi-diagram-3 me-2 text-secondary"></i>Virtual Networks</span>
+        <div class="form-check form-check-inline ms-auto mb-0">
+          <input class="form-check-input" type="checkbox" id="sriov-toggle"
+                 data-bs-toggle="collapse" data-bs-target="#sriov-networks">
+          <label class="form-check-label small text-secondary" for="sriov-toggle">
+            Show SR-IOV
+          </label>
+        </div>
       </div>
       <div class="card-body p-0 scrollable"
            hx-get="{{ url_for('htmx_networks') }}"

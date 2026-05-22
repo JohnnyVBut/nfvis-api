@@ -173,6 +173,25 @@ def htmx_diskspace():
     return render_template("htmx/diskspace.html", disks=disks)
 
 
+@app.get("/dashboard/settings")
+@login_required
+def htmx_settings():
+    api = _get_api()
+    try:
+        code, raw = api.query("get_settings")
+        app.logger.debug(f"get_settings raw response: {raw[:500]}")
+        parsed = json.loads(raw)
+        data = (
+            parsed.get("system:settings")
+            or parsed.get("settings")
+            or next(iter(parsed.values()), {})
+        )
+    except Exception as exc:
+        app.logger.warning(f"get_settings error: {exc}")
+        data = {}
+    return render_template("htmx/settings.html", data=data)
+
+
 @app.get("/dashboard/images")
 @login_required
 def htmx_images():
