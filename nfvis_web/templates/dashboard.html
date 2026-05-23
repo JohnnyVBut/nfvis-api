@@ -121,6 +121,23 @@
     </div>
   </div>
 
+  <!-- Resource Allocation -->
+  <div class="grid-stack-item" gs-id="resources" gs-x="8" gs-y="23" gs-w="4" gs-h="10">
+    <div class="grid-stack-item-content">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">
+          <i class="bi bi-bar-chart-line me-2 text-primary"></i>Resource Allocation
+        </div>
+        <div class="card-body p-0"
+             hx-get="{{ url_for('htmx_resources') }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          {% include "htmx/_spinner.html" %}
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Flavors -->
   <div class="grid-stack-item" gs-id="flavors" gs-x="0" gs-y="23" gs-w="8" gs-h="5">
     <div class="grid-stack-item-content">

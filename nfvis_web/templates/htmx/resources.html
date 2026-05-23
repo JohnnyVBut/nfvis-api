@@ -1,0 +1,108 @@
+{% macro fmt_mb(mb) -%}
+  {%- if mb >= 1024 -%}{{ (mb / 1024) | round(1) }} GB{%- else -%}{{ mb }} MB{%- endif -%}
+{%- endmacro %}
+
+{% if cpu or ram %}
+<div class="px-3 pt-3 pb-2">
+
+  {# ── CPU ──────────────────────────────────────────────────────────── #}
+  {% if cpu %}
+  <div class="mb-1 d-flex justify-content-between align-items-baseline small">
+    <span class="fw-semibold">
+      <i class="bi bi-cpu me-1 text-primary"></i>CPU
+    </span>
+    <span class="text-secondary font-monospace">
+      {{ cpu.vnf }} / {{ cpu.total - cpu.system }} cores allocated
+    </span>
+  </div>
+  {% set cpu_bar = 'bg-danger' if cpu.pct > 85 else ('bg-warning' if cpu.pct > 60 else 'bg-success') %}
+  <div class="progress mb-3" style="height:18px;">
+    <div class="progress-bar {{ cpu_bar }}"
+         style="width:{{ cpu.pct }}%; font-size:0.75rem; min-width:2rem;">
+      {{ cpu.pct }}%
+    </div>
+  </div>
+
+  <table class="table table-sm table-hover mb-4 small">
+    <thead class="table-light">
+      <tr>
+        <th class="text-center">Socket</th>
+        <th class="text-center">Total</th>
+        <th class="text-center text-secondary">System</th>
+        <th class="text-center" style="color:#0d6efd">VNF</th>
+        <th class="text-center text-success">Free</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in cpu.sockets %}
+      <tr>
+        <td class="text-center fw-semibold">{{ s.socket }}</td>
+        <td class="text-center">{{ s.total }}</td>
+        <td class="text-center text-secondary">{{ s.system }}</td>
+        <td class="text-center fw-semibold" style="color:#0d6efd">{{ s.vnf }}</td>
+        <td class="text-center text-success">{{ s.free }}</td>
+      </tr>
+      {% endfor %}
+      {% if cpu.sockets | length > 1 %}
+      <tr class="table-light">
+        <td class="text-center fw-semibold text-secondary small">Σ</td>
+        <td class="text-center fw-semibold">{{ cpu.total }}</td>
+        <td class="text-center fw-semibold text-secondary">{{ cpu.system }}</td>
+        <td class="text-center fw-semibold" style="color:#0d6efd">{{ cpu.vnf }}</td>
+        <td class="text-center fw-semibold text-success">{{ cpu.free }}</td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {# ── RAM ──────────────────────────────────────────────────────────── #}
+  {% if ram %}
+  <div class="mb-1 d-flex justify-content-between align-items-baseline small">
+    <span class="fw-semibold">
+      <i class="bi bi-memory me-1 text-info"></i>RAM
+    </span>
+    <span class="text-secondary font-monospace">
+      {{ fmt_mb(ram.allocated_mb) }} / {{ fmt_mb(ram.total_mb - ram.system_mb) }} allocated
+    </span>
+  </div>
+  {% set ram_bar = 'bg-danger' if ram.pct > 85 else ('bg-warning' if ram.pct > 60 else 'bg-success') %}
+  <div class="progress mb-3" style="height:18px;">
+    <div class="progress-bar {{ ram_bar }}"
+         style="width:{{ ram.pct }}%; font-size:0.75rem; min-width:2rem;">
+      {{ ram.pct }}%
+    </div>
+  </div>
+
+  <div class="row row-cols-2 g-2 small">
+    <div class="col">
+      <div class="border rounded p-2 text-center">
+        <div class="text-secondary">Total</div>
+        <div class="fw-semibold">{{ fmt_mb(ram.total_mb) }}</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="border rounded p-2 text-center">
+        <div class="text-secondary">System</div>
+        <div class="fw-semibold text-secondary">{{ fmt_mb(ram.system_mb) }}</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="border rounded p-2 text-center">
+        <div class="text-secondary">Allocated</div>
+        <div class="fw-semibold" style="color:#0d6efd">{{ fmt_mb(ram.allocated_mb) }}</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="border rounded p-2 text-center">
+        <div class="text-secondary">Free</div>
+        <div class="fw-semibold text-success">{{ fmt_mb(ram.free_mb) }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% else %}
+<p class="text-secondary small p-3 mb-0">Resource data unavailable.</p>
+{% endif %}

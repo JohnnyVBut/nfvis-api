@@ -173,6 +173,72 @@ def htmx_diskspace():
     return render_template("htmx/diskspace.html", disks=disks)
 
 
+@app.get("/dashboard/resources")
+@login_required
+def htmx_resources():
+    api = _get_api()
+    cpu = {}
+    ram = {}
+
+    # ── CPU allocation ──────────────────────────────────────────────────────
+    try:
+        _, raw = api.query("get_cpu_allocation")
+        parsed = json.loads(raw)
+        app.logger.debug(f"cpu_allocation raw: {parsed}")
+        alloc = (
+            parsed.get("cisco-resource-utilization:allocation")
+            or parsed.get("allocation")
+            or next(iter(parsed.values()), {})
+        )
+        if isinstance(alloc, dict):
+            socket_list = alloc.get("cpu-info", [])
+            if isinstance(socket_list, dict):
+                socket_list = [socket_list]
+            sockets = []
+            for s in socket_list:
+                sockets.append({
+                    "socket": s.get("socket-num", s.get("socket", len(sockets))),
+                    "total":  int(s.get("total-cores", 0)),
+                    "system": int(s.get("system-reserved-cores", s.get("system-cores", 0))),
+                    "vnf":    int(s.get("vnf-allocated-cores",   s.get("vnf-cores",    0))),
+                    "free":   int(s.get("free-cores", 0)),
+                })
+            total  = int(alloc.get("total-cores",        sum(s["total"]  for s in sockets)))
+            system = int(alloc.get("total-system-cores", sum(s["system"] for s in sockets)))
+            vnf    = int(alloc.get("total-vnf-cores",    sum(s["vnf"]    for s in sockets)))
+            free   = int(alloc.get("total-free-cores",   sum(s["free"]   for s in sockets)))
+            usable = total - system
+            pct    = round(vnf / usable * 100) if usable else 0
+            cpu = {"sockets": sockets, "total": total, "system": system,
+                   "vnf": vnf, "free": free, "pct": pct}
+    except Exception as exc:
+        app.logger.warning(f"cpu-allocation error: {exc}")
+
+    # ── RAM info ────────────────────────────────────────────────────────────
+    try:
+        _, raw = api.query("get_mem_info")
+        parsed = json.loads(raw)
+        app.logger.debug(f"mem_info raw: {parsed}")
+        mem = (
+            parsed.get("cisco-resource-utilization:mem-info")
+            or parsed.get("mem-info")
+            or next(iter(parsed.values()), {})
+        )
+        if isinstance(mem, dict):
+            total_mb  = int(mem.get("total-memory",           mem.get("total-mem",           0)))
+            system_mb = int(mem.get("system-reserved-memory",  mem.get("system-mem",          0)))
+            alloc_mb  = int(mem.get("allocated-memory",        mem.get("vnf-allocated-memory", 0)))
+            free_mb   = int(mem.get("free-memory",             mem.get("free-mem",            0)))
+            usable    = total_mb - system_mb
+            pct       = round(alloc_mb / usable * 100) if usable else 0
+            ram = {"total_mb": total_mb, "system_mb": system_mb,
+                   "allocated_mb": alloc_mb, "free_mb": free_mb, "pct": pct}
+    except Exception as exc:
+        app.logger.warning(f"mem-info error: {exc}")
+
+    return render_template("htmx/resources.html", cpu=cpu, ram=ram)
+
+
 @app.get("/dashboard/settings")
 @login_required
 def htmx_settings():

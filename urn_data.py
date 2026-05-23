@@ -51,6 +51,8 @@ _ENDPOINTS: dict[str, _Endpoint] = {
     "get_settings":          _Endpoint("config/system/settings?deep",                                           Method.GET,    "data",   append_argument=False),
     "get_routes":            _Endpoint("config/system/routes",                                                  Method.GET,    "data"),
     "get_disk_space":        _Endpoint("operational/system/disk-space?deep",                                    Method.GET,    "data",   append_argument=False),
+    "get_cpu_allocation":    _Endpoint("operational/resources/cpu-info/allocation?deep",                        Method.GET,    "data",   append_argument=False),
+    "get_mem_info":          _Endpoint("operational/resources/mem-info",                                        Method.GET,    "data",   append_argument=False),
     "get_disks":             _Endpoint("operational/system/ext-disks",                                          Method.GET,    "collection"),
     "get_ports":             _Endpoint("operational/pnics?deep",                                                Method.GET,    "data",   append_argument=False),
     "get_banner":            _Endpoint("config/banner-motd",                                                    Method.GET,    "data"),
