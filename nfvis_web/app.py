@@ -186,31 +186,40 @@ def htmx_resources():
         parsed = json.loads(raw)
         app.logger.debug(f"cpu_allocation raw: {parsed}")
         alloc = (
-            parsed.get("cisco-resource-utilization:allocation")
+            parsed.get("resources:allocation")
+            or parsed.get("cisco-resource-utilization:allocation")
             or parsed.get("allocation")
             or next(iter(parsed.values()), {})
         )
         if isinstance(alloc, dict):
-            socket_list = alloc.get("cpu-info", [])
-            if isinstance(socket_list, dict):
-                socket_list = [socket_list]
-            sockets = []
-            for s in socket_list:
-                sockets.append({
-                    "socket": s.get("socket-num", s.get("socket", len(sockets))),
-                    "total":  int(s.get("total-cores", 0)),
-                    "system": int(s.get("system-reserved-cores", s.get("system-cores", 0))),
-                    "vnf":    int(s.get("vnf-allocated-cores",   s.get("vnf-cores",    0))),
-                    "free":   int(s.get("free-cores", 0)),
-                })
-            total  = int(alloc.get("total-cores",        sum(s["total"]  for s in sockets)))
-            system = int(alloc.get("total-system-cores", sum(s["system"] for s in sockets)))
-            vnf    = int(alloc.get("total-vnf-cores",    sum(s["vnf"]    for s in sockets)))
-            free   = int(alloc.get("total-free-cores",   sum(s["free"]   for s in sockets)))
-            usable = total - system
-            pct    = round(vnf / usable * 100) if usable else 0
-            cpu = {"sockets": sockets, "total": total, "system": system,
-                   "vnf": vnf, "free": free, "pct": pct}
+            total      = int(alloc.get("total-logical-cpus",          0))
+            system     = int(alloc.get("logical-cpus-used-by-system", 0))
+            vnf        = int(alloc.get("logical-cpus-used-by-vnfs",   0))
+            dedicated  = int(alloc.get("logical-cpus-used-dedicated", 0))
+            sharable   = int(alloc.get("logical-cpus-used-sharable",  0))
+            n_sockets  = int(alloc.get("total-sockets",               1))
+            cores_per  = int(alloc.get("cores-per-socket", total // n_sockets if n_sockets else total))
+            free       = total - system - vnf
+            usable     = total - system
+            pct        = round(vnf / usable * 100) if usable else 0
+            # Build one row per socket (data is aggregated — divide evenly)
+            sockets = [
+                {
+                    "socket": i,
+                    "total":  total  // n_sockets,
+                    "system": system // n_sockets,
+                    "vnf":    vnf    // n_sockets,
+                    "free":   free   // n_sockets,
+                }
+                for i in range(n_sockets)
+            ]
+            cpu = {
+                "sockets": sockets, "n_sockets": n_sockets,
+                "cores_per_socket": cores_per,
+                "total": total, "system": system,
+                "vnf": vnf, "vnf_dedicated": dedicated, "vnf_sharable": sharable,
+                "free": free, "pct": pct,
+            }
     except Exception as exc:
         app.logger.warning(f"cpu-allocation error: {exc}")
 
@@ -220,15 +229,19 @@ def htmx_resources():
         parsed = json.loads(raw)
         app.logger.debug(f"mem_info raw: {parsed}")
         mem = (
-            parsed.get("cisco-resource-utilization:mem-info")
+            parsed.get("resources:mem-info")
+            or parsed.get("cisco-resource-utilization:mem-info")
             or parsed.get("mem-info")
             or next(iter(parsed.values()), {})
         )
         if isinstance(mem, dict):
-            total_mb  = int(mem.get("total-memory",           mem.get("total-mem",           0)))
-            system_mb = int(mem.get("system-reserved-memory",  mem.get("system-mem",          0)))
-            alloc_mb  = int(mem.get("allocated-memory",        mem.get("vnf-allocated-memory", 0)))
-            free_mb   = int(mem.get("free-memory",             mem.get("free-mem",            0)))
+            total_mb  = int(mem.get("total-memory-mb",    0))
+            system_mb = int(mem.get("system-memory-mb",   0))
+            hp_total  = int(mem.get("total-hugepages-mb", 0))
+            hp_free   = int(mem.get("free-hugepages-mb",  0))
+            # VNF memory is hugepage-backed; allocated = reserved hugepages in use
+            alloc_mb  = hp_total - hp_free
+            free_mb   = hp_free
             usable    = total_mb - system_mb
             pct       = round(alloc_mb / usable * 100) if usable else 0
             ram = {"total_mb": total_mb, "system_mb": system_mb,

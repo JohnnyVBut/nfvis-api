@@ -12,7 +12,7 @@
       <i class="bi bi-cpu me-1 text-primary"></i>CPU
     </span>
     <span class="text-secondary font-monospace">
-      {{ cpu.vnf }} / {{ cpu.total - cpu.system }} cores allocated
+      {{ cpu.vnf }} / {{ cpu.total - cpu.system }} logical CPUs allocated
     </span>
   </div>
   {% set cpu_bar = 'bg-danger' if cpu.pct > 85 else ('bg-warning' if cpu.pct > 60 else 'bg-success') %}
@@ -23,7 +23,7 @@
     </div>
   </div>
 
-  <table class="table table-sm table-hover mb-4 small">
+  <table class="table table-sm table-hover mb-1 small">
     <thead class="table-light">
       <tr>
         <th class="text-center">Socket</th>
@@ -43,9 +43,9 @@
         <td class="text-center text-success">{{ s.free }}</td>
       </tr>
       {% endfor %}
-      {% if cpu.sockets | length > 1 %}
+      {% if cpu.n_sockets > 1 %}
       <tr class="table-light">
-        <td class="text-center fw-semibold text-secondary small">Σ</td>
+        <td class="text-center fw-semibold text-secondary">Σ</td>
         <td class="text-center fw-semibold">{{ cpu.total }}</td>
         <td class="text-center fw-semibold text-secondary">{{ cpu.system }}</td>
         <td class="text-center fw-semibold" style="color:#0d6efd">{{ cpu.vnf }}</td>
@@ -54,6 +54,11 @@
       {% endif %}
     </tbody>
   </table>
+  {% if cpu.vnf_dedicated or cpu.vnf_sharable %}
+  <p class="text-secondary mb-3" style="font-size:0.75rem;">
+    VNF breakdown — dedicated: {{ cpu.vnf_dedicated }}, sharable: {{ cpu.vnf_sharable }}
+  </p>
+  {% endif %}
   {% endif %}
 
   {# ── RAM ──────────────────────────────────────────────────────────── #}
@@ -74,7 +79,7 @@
     </div>
   </div>
 
-  <div class="row row-cols-2 g-2 small">
+  <div class="row row-cols-2 g-2 small mb-1">
     <div class="col">
       <div class="border rounded p-2 text-center">
         <div class="text-secondary">Total</div>
@@ -100,6 +105,9 @@
       </div>
     </div>
   </div>
+  <p class="text-secondary mb-0" style="font-size:0.75rem;">
+    Hugepage-backed VNF memory
+  </p>
   {% endif %}
 
 </div>
