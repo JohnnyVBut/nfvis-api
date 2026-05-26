@@ -187,6 +187,33 @@
   </div>
 </div>
 
+<!-- ── Delete VM modal ───────────────────────────────────────────── -->
+<div class="modal fade" id="deleteVmModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title text-danger">
+          <i class="bi bi-trash me-2"></i>Undeploy VM
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body small">
+        Undeploy <strong id="deleteVmNameDisplay"></strong>?
+        <br><span class="text-secondary">The VM will be stopped and removed.</span>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-secondary"
+                data-bs-dismiss="modal">Cancel</button>
+        <button type="button" id="confirmDeleteVmBtn"
+                class="btn btn-sm btn-danger"
+                data-bs-dismiss="modal">
+          <i class="bi bi-trash me-1"></i>Undeploy
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Deploy VM modal ───────────────────────────────────────────── -->
 <div class="modal fade" id="addVmModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
@@ -312,6 +339,18 @@ document.getElementById('editVmModal').addEventListener('submit', function () {
       document.body.dispatchEvent(new CustomEvent('refreshDeployments', {bubbles: true}));
     }, delay);
   });
+});
+
+// Delete VM modal: set name and store URL on button
+document.getElementById('deleteVmModal').addEventListener('show.bs.modal', function (e) {
+  var name = e.relatedTarget && e.relatedTarget.getAttribute('data-vm-name');
+  if (!name) return;
+  document.getElementById('deleteVmNameDisplay').textContent = name;
+  document.getElementById('confirmDeleteVmBtn')._url = '/dashboard/deployments/' + encodeURIComponent(name);
+});
+document.getElementById('confirmDeleteVmBtn').addEventListener('click', function () {
+  if (!this._url) return;
+  htmx.ajax('DELETE', this._url, {target: '#toast-container', swap: 'beforeend'});
 });
 
 // Delete Flavor modal: set name and store URL on button

@@ -390,6 +390,24 @@ def htmx_deployments():
     return render_template("htmx/deployments.html", deployments=deps)
 
 
+@app.delete("/dashboard/deployments/<name>")
+@login_required
+def dashboard_deployment_delete(name):
+    api = _get_api()
+    try:
+        code = api.undeploy_vm(name)
+        if code == 204:
+            resp = make_response(
+                render_template("htmx/toast.html", category="success",
+                                message=f"VM '{name}' undeployed."))
+            resp.headers["HX-Trigger"] = "refreshDeployments"
+            return resp
+        return render_template("htmx/toast.html", category="danger",
+                               message=f"Undeploy failed (HTTP {code}).")
+    except Exception as exc:
+        return render_template("htmx/toast.html", category="danger", message=str(exc))
+
+
 @app.post("/dashboard/deployments/<name>/action/<action>")
 @login_required
 def dashboard_vm_action(name, action):
