@@ -184,7 +184,6 @@ def htmx_resources():
     try:
         _, raw = api.query("get_cpu_allocation")
         parsed = json.loads(raw)
-        app.logger.debug(f"cpu_allocation raw: {parsed}")
         alloc = (
             parsed.get("resources:allocation")
             or parsed.get("cisco-resource-utilization:allocation")
@@ -227,7 +226,6 @@ def htmx_resources():
     try:
         _, raw = api.query("get_mem_info")
         parsed = json.loads(raw)
-        app.logger.debug(f"mem_info raw: {parsed}")
         mem = (
             parsed.get("resources:mem-info")
             or parsed.get("cisco-resource-utilization:mem-info")
@@ -656,7 +654,7 @@ def dashboard_deployment_create():
             }
 
         payload = json.dumps({"deployment": [{"name": name, "vm_group": [vm_group]}]})
-        app.logger.debug(f"deployment_create payload: {payload}")
+
 
         # Bypass api.deploy_vm() (has slow pre-flight) — call query directly
         code, raw_resp = api.query("deploy_vm", payload=payload)

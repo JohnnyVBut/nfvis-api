@@ -753,7 +753,6 @@ class API:
         """
         payload = json.dumps({"input": {"deployment-name": deployment, "vm-name": vm}})
         code, content = self.query("vm_console", "", payload, "json")
-        logger.debug(f"get_console raw response [{code}]: {content}")
         if code not in (200, 201):
             logger.warning(f"get_console {deployment}/{vm}: {code} {return_code(code)}")
             return code, content
