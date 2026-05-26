@@ -629,7 +629,7 @@ def dashboard_deployment_create():
             "recovery_policy":     {"action_on_recovery": "REBOOT_ONLY"},
         }
         if vm_config_data:
-            vm_group["vm_config_data"] = vm_config_data
+            vm_group["config_data"] = {"config_data_variable": vm_config_data}
 
         payload = json.dumps({"deployment": [{"name": name, "vm_group": [vm_group]}]})
         app.logger.debug(f"deployment_create payload: {payload}")
