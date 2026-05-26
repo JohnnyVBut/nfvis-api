@@ -400,7 +400,7 @@ def dashboard_deployment_delete(name):
             resp = make_response(
                 render_template("htmx/toast.html", category="success",
                                 message=f"VM '{name}' undeployed."))
-            resp.headers["HX-Trigger"] = "refreshDeployments"
+            resp.headers["HX-Trigger"] = "refreshDeployments, refreshResources"
             return resp
         return render_template("htmx/toast.html", category="danger",
                                message=f"Undeploy failed (HTTP {code}).")
@@ -664,7 +664,7 @@ def dashboard_deployment_create():
             resp = make_response(
                 render_template("htmx/toast.html", category="success",
                                 message=f"VM '{name}' deployment started."))
-            resp.headers["HX-Trigger"] = "refreshDeployments"
+            resp.headers["HX-Trigger"] = "refreshDeployments, refreshResources"
             return resp
 
         try:
