@@ -108,8 +108,14 @@
   <div class="grid-stack-item" gs-id="deployments" gs-x="6" gs-y="5" gs-w="6" gs-h="6">
     <div class="grid-stack-item-content">
       <div class="card shadow-sm">
-        <div class="card-header fw-semibold">
-          <i class="bi bi-pc-display me-2 text-danger"></i>VM Deployments
+        <div class="card-header fw-semibold d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-pc-display me-2 text-danger"></i>VM Deployments</span>
+          <button class="btn btn-danger btn-sm py-0 lh-1"
+                  data-bs-toggle="modal" data-bs-target="#addVmModal"
+                  title="Deploy VM"
+                  onmousedown="event.stopPropagation()">
+            <i class="bi bi-plus-lg"></i>
+          </button>
         </div>
         <div class="card-body p-0" id="deployments-body"
              hx-get="{{ url_for('htmx_deployments') }}"

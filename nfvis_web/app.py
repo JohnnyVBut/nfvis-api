@@ -502,6 +502,159 @@ def htmx_deployment_edit_save(name):
     return resp
 
 
+@app.get("/dashboard/deployments/new")
+@login_required
+def htmx_deployment_new():
+    api = _get_api()
+    try:
+        images   = api.get_images_with_props()
+        networks = api.get_network_list(brief=True)
+    except Exception as exc:
+        app.logger.warning(f"deployment_new error: {exc}")
+        images, networks = [], []
+    return render_template("htmx/deployment_new.html", images=images, networks=networks)
+
+
+@app.get("/dashboard/deployments/new/dynamic")
+@login_required
+def htmx_deployment_new_dynamic():
+    api        = _get_api()
+    image_name = request.args.get("image", "").strip()
+
+    # ── Flavors filtered by image ────────────────────────────────────────
+    flavors = []
+    try:
+        _, raw_flavors = api.query("get_flavors_deep")
+        all_flavors = (json.loads(raw_flavors)
+                       .get("vmlc:flavors", {}).get("flavor", []))
+        if isinstance(all_flavors, dict):
+            all_flavors = [all_flavors]
+
+        def _src_image(f):
+            props = f.get("properties", {}).get("property", [])
+            if isinstance(props, dict):
+                props = [props]
+            for p in props:
+                if p.get("name") == "source_image":
+                    return p.get("value", "")
+            return ""
+
+        flavors = [f.get("name") for f in all_flavors
+                   if _src_image(f) == image_name or _src_image(f) == ""]
+    except Exception as exc:
+        app.logger.warning(f"deployment_new_dynamic flavors: {exc}")
+
+    # ── Custom properties + datastore hint from image opdata ─────────────
+    custom_props   = []
+    datastore_hint = "datastore1"
+    try:
+        images = api.get_images_with_props()
+        img = next((i for i in images if i.get("name") == image_name), None)
+        if img:
+            custom_props = img.get("custom_property", [])
+            if isinstance(custom_props, dict):
+                custom_props = [custom_props]
+            for p in img.get("property", []):
+                if p.get("name") == "placement":
+                    vals = p.get("value", [])
+                    if vals:
+                        datastore_hint = vals[0]
+                    break
+    except Exception as exc:
+        app.logger.warning(f"deployment_new_dynamic props: {exc}")
+
+    return render_template("htmx/deployment_new_dynamic.html",
+                           flavors=flavors,
+                           custom_props=custom_props,
+                           datastore_hint=datastore_hint)
+
+
+@app.post("/dashboard/deployments")
+@login_required
+def dashboard_deployment_create():
+    api = _get_api()
+    try:
+        f         = request.form
+        name      = f.get("name",      "").strip()
+        image     = f.get("image",     "").strip()
+        flavor    = f.get("flavor",    "").strip()
+        datastore = f.get("datastore", "datastore1").strip()
+        networks  = [n.strip() for n in f.getlist("network[]") if n.strip()]
+
+        if not all([name, image, flavor, datastore]):
+            return render_template("htmx/toast.html", category="danger",
+                                   message="Name, Image, Flavor and Datastore are required.")
+
+        # ── Light validation 1: name uniqueness ──────────────────────────
+        try:
+            raw_deps = api.get_deployments(brief=True)
+            existing = [d["name"] for d in
+                        json.loads(raw_deps).get("vmlc:deployments", {}).get("deployment", [])]
+            if name in existing:
+                return render_template("htmx/toast.html", category="danger",
+                                       message=f"VM '{name}' already exists.")
+        except Exception:
+            pass   # let the API reject it if check fails
+
+        # ── Light validation 2: sufficient resources ─────────────────────
+        try:
+            _, res_raw = api.res_check(flavor)
+            res = json.loads(res_raw).get("resources:vnf", {})
+            if not res.get("sufficient-resources", True):
+                cause = res.get("cause", "insufficient resources")
+                return render_template("htmx/toast.html", category="danger",
+                                       message=f"Insufficient resources: {cause}")
+        except Exception:
+            pass
+
+        # ── Build vm_config_data from custom property fields ─────────────
+        cp_names = f.getlist("cp_name[]")
+        cp_vals  = f.getlist("cp_value[]")
+        vm_config_data = [{"name": k, "value": v}
+                          for k, v in zip(cp_names, cp_vals) if k]
+
+        # ── Build deployment payload ──────────────────────────────────────
+        interfaces = [{"nicid": i, "model": "virtio", "network": n}
+                      for i, n in enumerate(networks)]
+        vm_group = {
+            "name":                name,
+            "image":               image,
+            "flavor":              flavor,
+            "vim_vm_name":         name,
+            "bootup_time":         -1,
+            "recovery_wait_time":  0,
+            "interfaces":          {"interface": interfaces},
+            "scaling":             {"min_active": 1, "max_active": 1},
+            "placement":           [{"type": "zone_host", "host": datastore}],
+            "recovery_policy":     {"action_on_recovery": "REBOOT_ONLY"},
+        }
+        if vm_config_data:
+            vm_group["vm_config_data"] = vm_config_data
+
+        payload = json.dumps({"deployment": [{"name": name, "vm_group": [vm_group]}]})
+        app.logger.debug(f"deployment_create payload: {payload}")
+
+        # Bypass api.deploy_vm() (has slow pre-flight) — call query directly
+        code, raw_resp = api.query("deploy_vm", payload=payload)
+        if code == 201:
+            resp = make_response(
+                render_template("htmx/toast.html", category="success",
+                                message=f"VM '{name}' deployment started."))
+            resp.headers["HX-Trigger"] = "refreshDeployments"
+            return resp
+
+        try:
+            err = json.loads(raw_resp)["errors"]["error"][0]["error-message"]
+        except Exception:
+            err = f"HTTP {code}"
+        return render_template("htmx/toast.html", category="danger",
+                               message=f"Deploy failed: {err}")
+
+    except Exception as exc:
+        app.logger.warning(f"dashboard_deployment_create error: {exc}")
+        return render_template("htmx/toast.html", category="danger", message=str(exc))
+
+
 @app.get("/dashboard/deployments/<name>/console")
 @login_required
 def dashboard_vm_console(name):

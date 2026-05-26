@@ -187,6 +187,21 @@
   </div>
 </div>
 
+<!-- ── Deploy VM modal ───────────────────────────────────────────── -->
+<div class="modal fade" id="addVmModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title text-success">
+          <i class="bi bi-pc-display me-2"></i>Deploy VM
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="addVmModalBody"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Add Flavor modal ───────────────────────────────────────────── -->
 <div class="modal fade" id="addFlavorModal" tabindex="-1">
   <div class="modal-dialog">
@@ -309,6 +324,20 @@ document.getElementById('deleteFlavorModal').addEventListener('show.bs.modal', f
 document.getElementById('confirmDeleteFlavorBtn').addEventListener('click', function () {
   if (!this._url) return;
   htmx.ajax('DELETE', this._url, {target: '#toast-container', swap: 'beforeend'});
+});
+
+// Deploy VM modal: load form dynamically
+document.getElementById('addVmModal').addEventListener('show.bs.modal', function () {
+  document.getElementById('addVmModalBody').innerHTML =
+    '<div class="d-flex justify-content-center p-4"><div class="spinner-border text-secondary"></div></div>';
+  htmx.ajax('GET', '/dashboard/deployments/new', {target: '#addVmModalBody', swap: 'innerHTML'});
+});
+document.getElementById('addVmModal').addEventListener('submit', function () {
+  var modal = bootstrap.Modal.getInstance(this);
+  if (modal) modal.hide();
+  setTimeout(function () {
+    document.body.dispatchEvent(new CustomEvent('refreshDeployments', {bubbles: true}));
+  }, 2000);
 });
 
 // Add Flavor modal: load form dynamically (gets fresh image list)

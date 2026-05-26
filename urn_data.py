@@ -63,6 +63,7 @@ _ENDPOINTS: dict[str, _Endpoint] = {
     # --- Images -----------------------------------------------------------
     "get_image_status":      _Endpoint("operational/vm_lifecycle/opdata/images/image",                          Method.GET,    "data"),
     "get_image_list":        _Endpoint("config/vm_lifecycle/images?deep",                                       Method.GET,    "data",   append_argument=False),
+    "get_images_opdata":     _Endpoint("operational/vm_lifecycle/opdata/images?deep",                           Method.GET,    "data",   append_argument=False),
     "image_reg":             _Endpoint("config/vm_lifecycle/images",                                            Method.POST,   "data"),
     "image_unreg":           _Endpoint("config/vm_lifecycle/images/image",                                      Method.DELETE, "data"),
     "reg_upgrade_pckg":      _Endpoint("config/system/upgrade",                                                 Method.POST,   "data"),

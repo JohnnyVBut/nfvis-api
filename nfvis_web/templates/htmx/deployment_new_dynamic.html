@@ -1,0 +1,58 @@
+<div class="row g-3">
+
+  <!-- Flavor -->
+  <div class="col-md-6">
+    <label class="form-label fw-semibold small">
+      Flavor <span class="text-danger">*</span>
+    </label>
+    {% if flavors %}
+    <select name="flavor" class="form-select form-select-sm" required>
+      {% for f in flavors %}
+      <option value="{{ f }}">{{ f }}</option>
+      {% endfor %}
+    </select>
+    {% else %}
+    <div class="form-control form-control-sm text-danger small bg-light">
+      No compatible flavors found
+    </div>
+    <input type="hidden" name="flavor" value="">
+    {% endif %}
+  </div>
+
+  <!-- Datastore -->
+  <div class="col-md-6">
+    <label class="form-label fw-semibold small">
+      Datastore <span class="text-danger">*</span>
+    </label>
+    <input type="text" class="form-control form-control-sm"
+           name="datastore" required value="{{ datastore_hint }}"
+           placeholder="datastore1">
+  </div>
+
+  <!-- Custom Properties -->
+  {% if custom_props %}
+  <div class="col-12">
+    <label class="form-label fw-semibold small">
+      Image Properties
+      <span class="text-danger">*</span>
+      <span class="text-secondary fw-normal ms-1">(defined by image)</span>
+    </label>
+    <div class="border rounded p-3 bg-light">
+      {% for cp in custom_props %}
+      <div class="row align-items-center g-2 mb-2">
+        <div class="col-4">
+          <span class="font-monospace small text-secondary">{{ cp.name }}</span>
+          <input type="hidden" name="cp_name[]" value="{{ cp.name }}">
+        </div>
+        <div class="col-8">
+          <input type="text" class="form-control form-control-sm"
+                 name="cp_value[]" required
+                 placeholder="{{ cp.name }}">
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>

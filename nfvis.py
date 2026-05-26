@@ -214,6 +214,14 @@ class API:
             logger.error(f"Unable to get image list: {code} {return_code(code)}")
             return []
 
+    def get_images_with_props(self) -> list:
+        """Return ACTIVE images with custom_property and property hints (placement, flavors)."""
+        _, raw = self.query("get_images_opdata")
+        images = json.loads(raw).get("vmlc:images", {}).get("image", [])
+        if isinstance(images, dict):
+            images = [images]
+        return [i for i in images if i.get("state") == "IMAGE_ACTIVE_STATE"]
+
     # ------------------------------------------------------------------
     #  Flavors
     # ------------------------------------------------------------------
