@@ -10,6 +10,7 @@
       <th>Allowed VLANs</th>
       <th>Port-Channel</th>
       <th>Link</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
@@ -52,6 +53,15 @@
         {% else %}
           <span class="badge bg-secondary">{{ port.link }}</span>
         {% endif %}
+      </td>
+      <td class="text-end pe-2">
+        <button class="btn btn-link btn-sm p-0 text-secondary"
+                title="Edit"
+                data-bs-toggle="modal" data-bs-target="#editSwitchportModal"
+                data-port-name="{{ port.name }}"
+                onmousedown="event.stopPropagation()">
+          <i class="bi bi-pencil"></i>
+        </button>
       </td>
     </tr>
     {% endfor %}

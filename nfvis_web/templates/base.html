@@ -299,6 +299,19 @@
   </div>
 </div>
 
+<!-- ── Edit Switchport modal ──────────────────────────────────────── -->
+<div class="modal fade" id="editSwitchportModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title text-success" id="editSwitchportModalTitle">Edit Interface</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div id="editSwitchportModalBody"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Add VLAN modal ─────────────────────────────────────────────── -->
 <div class="modal fade" id="addVlanModal" tabindex="-1">
   <div class="modal-dialog modal-sm">
@@ -505,6 +518,24 @@ document.getElementById('addFlavorModal').addEventListener('submit', function ()
   setTimeout(function () {
     document.body.dispatchEvent(new CustomEvent('refreshFlavors', {bubbles: true}));
   }, 1000);
+});
+
+// Edit Switchport modal: load form dynamically
+document.getElementById('editSwitchportModal').addEventListener('show.bs.modal', function (e) {
+  var name = e.relatedTarget && e.relatedTarget.getAttribute('data-port-name');
+  if (!name) return;
+  document.getElementById('editSwitchportModalTitle').textContent = 'Edit GigabitEthernet' + name;
+  document.getElementById('editSwitchportModalBody').innerHTML =
+    '<div class="d-flex justify-content-center p-4"><div class="spinner-border text-secondary"></div></div>';
+  htmx.ajax('GET', '/dashboard/switchports/' + name + '/edit',
+            {target: '#editSwitchportModalBody', swap: 'innerHTML'});
+});
+document.getElementById('editSwitchportModal').addEventListener('submit', function () {
+  var modal = bootstrap.Modal.getInstance(this);
+  if (modal) modal.hide();
+  setTimeout(function () {
+    document.body.dispatchEvent(new CustomEvent('refreshSwitchports', {bubbles: true}));
+  }, 1500);
 });
 
 // Add VLAN modal: close and refresh on submit

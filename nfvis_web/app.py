@@ -1122,6 +1122,91 @@ def htmx_switchports():
     return render_template("htmx/switchports.html", switchports=switchports)
 
 
+@app.get("/dashboard/switchports/<path:name>/edit")
+@login_required
+def htmx_switchport_edit(name):
+    api = _get_api()
+    try:
+        # Config: description, shutdown, channel-group
+        _, raw_cfg = api.query("get_all_swp_config")
+        cfg_col = json.loads(raw_cfg).get("collection", {})
+        cfg_list = (
+            cfg_col.get("switch:gigabitEthernet")
+            or cfg_col.get("gigabitEthernet")
+            or []
+        )
+        if isinstance(cfg_list, dict):
+            cfg_list = [cfg_list]
+        cfg = next((p for p in cfg_list if str(p.get("name", "")) == name), {})
+
+        # Operational: mode, VLANs
+        _, raw_op = api.query("get_swp_operational")
+        op_col = json.loads(raw_op).get("collection", {})
+        op_list = (
+            op_col.get("switch:gigabitEthernet")
+            or op_col.get("gigabitEthernet")
+            or []
+        )
+        if isinstance(op_list, dict):
+            op_list = [op_list]
+        op = next((p for p in op_list if str(p.get("Port", "")) == name), {})
+
+        port = {
+            "description":   cfg.get("description", ""),
+            "shutdown":      "shutdown" in cfg,
+            "mode":          op.get("adminstrative-mode", "access"),
+            "access_vlan":   op.get("access-mode-vlan", 1),
+            "native_vlan":   op.get("trunk-native-mode-vlan", 1),
+            "allowed_vlans": op.get("trunking-vlans", ""),
+        }
+    except Exception as exc:
+        app.logger.warning(f"switchport_edit {name}: {exc}")
+        port = {}
+    return render_template("htmx/switchport_edit.html", port_name=name, port=port)
+
+
+@app.put("/dashboard/switchports/<path:name>")
+@login_required
+def dashboard_switchport_update(name):
+    api = _get_api()
+    try:
+        f             = request.form
+        mode          = f.get("mode", "access")
+        description   = f.get("description", "").strip() or None
+        shutdown      = bool(f.get("shutdown"))
+        access_vlan   = int(f.get("access_vlan") or 1)
+        native_vlan   = int(f.get("native_vlan") or 1)
+        allowed_vlans = f.get("allowed_vlans", "").strip() or "all"
+
+        swp = Switchport(
+            name=name,
+            description=description,
+            mode=mode,
+            vlan=access_vlan,
+            native_vlan=native_vlan,
+            allowed_vlans=allowed_vlans,
+            shutdown=shutdown,
+        )
+        # Remove null description from payload to avoid API rejection
+        payload = json.loads(swp.get_config())
+        itype = next(iter(payload))
+        if payload[itype].get("description") is None:
+            payload[itype].pop("description", None)
+
+        code = api.swp_config_put(json.dumps(payload))
+        if code in (200, 201, 204):
+            resp = make_response(render_template(
+                "htmx/toast.html", category="success",
+                message=f"GigabitEthernet{name} updated."))
+            resp.headers["HX-Trigger"] = "refreshSwitchports"
+            return resp
+        return render_template("htmx/toast.html", category="danger",
+                               message=f"Update failed (HTTP {code}).")
+    except Exception as exc:
+        app.logger.warning(f"switchport_update {name}: {exc}")
+        return render_template("htmx/toast.html", category="danger", message=str(exc))
+
+
 # ---------------------------------------------------------------------------
 #  Configuration
 # ---------------------------------------------------------------------------
