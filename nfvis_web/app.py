@@ -1075,7 +1075,7 @@ def htmx_portchannels():
 def htmx_switchports():
     api = _get_api()
     try:
-        # Config: description, shutdown, channel-group
+        # Config: mode, VLANs, description, shutdown, channel-group
         _, raw_cfg = api.query("get_all_swp_config")
         cfg_col = json.loads(raw_cfg).get("collection", {})
         cfg_list = (
@@ -1085,9 +1085,8 @@ def htmx_switchports():
         )
         if isinstance(cfg_list, dict):
             cfg_list = [cfg_list]
-        cfg_by_port = {str(p.get("name", "")): p for p in cfg_list}
 
-        # Operational: link status, mode, VLANs
+        # Operational: link status only
         _, raw_op = api.query("get_swp_operational")
         op_col = json.loads(raw_op).get("collection", {})
         op_list = (
@@ -1097,24 +1096,38 @@ def htmx_switchports():
         )
         if isinstance(op_list, dict):
             op_list = [op_list]
+        op_by_port = {str(p.get("Port", "")): p for p in op_list}
 
-        # Merge by port number
+        # Build display rows from config (source of truth); add link from operational
         switchports = []
-        for op in op_list:
-            port = str(op.get("Port", ""))
-            cfg = cfg_by_port.get(port, {})
-            cg = cfg.get("channel-group", [])
-            mode = op.get("adminstrative-mode", "—")
+        for cfg in cfg_list:
+            port = str(cfg.get("name", ""))
+            swp  = cfg.get("switchport", {})
+            mode = swp.get("mode", "access")
+            cg   = cfg.get("channel-group", [])
+
+            if mode == "access":
+                access_vlan   = str(swp.get("access", {}).get("vlan", "—"))
+                native_vlan   = "—"
+                allowed_vlans = "—"
+            else:
+                access_vlan = "—"
+                native_vlan = str(swp.get("trunk", {}).get("native", {}).get("vlan", "—"))
+                raw_range   = (swp.get("trunk", {}).get("allowed", {})
+                               .get("vlan", {}).get("vlan-range", ""))
+                allowed_vlans = raw_range if raw_range not in ("None", "", None) else "—"
+
+            op = op_by_port.get(port, {})
             switchports.append({
-                "name":         port,
-                "description":  cfg.get("description", ""),
-                "shutdown":     bool(cfg.get("shutdown")),
-                "mode":         mode,
-                "access_vlan":  op.get("access-mode-vlan", "—"),
-                "native_vlan":  op.get("trunk-native-mode-vlan", "—"),
-                "allowed_vlans": op.get("trunking-vlans", "—"),
-                "port_channel": cg[0].get("cid", "") if cg else "",
-                "link":         op.get("operational-mode", "—"),
+                "name":          port,
+                "description":   cfg.get("description", ""),
+                "shutdown":      bool(cfg.get("shutdown")),
+                "mode":          mode,
+                "access_vlan":   access_vlan,
+                "native_vlan":   native_vlan,
+                "allowed_vlans": allowed_vlans,
+                "port_channel":  cg[0].get("cid", "") if cg else "",
+                "link":          op.get("operational-mode", "—"),
             })
     except Exception as exc:
         app.logger.warning(f"switchports error: {exc}")
@@ -1127,7 +1140,7 @@ def htmx_switchports():
 def htmx_switchport_edit(name):
     api = _get_api()
     try:
-        # Config: description, shutdown, channel-group
+        # Config is the source of truth for edit form
         _, raw_cfg = api.query("get_all_swp_config")
         cfg_col = json.loads(raw_cfg).get("collection", {})
         cfg_list = (
@@ -1139,25 +1152,18 @@ def htmx_switchport_edit(name):
             cfg_list = [cfg_list]
         cfg = next((p for p in cfg_list if str(p.get("name", "")) == name), {})
 
-        # Operational: mode, VLANs
-        _, raw_op = api.query("get_swp_operational")
-        op_col = json.loads(raw_op).get("collection", {})
-        op_list = (
-            op_col.get("switch:gigabitEthernet")
-            or op_col.get("gigabitEthernet")
-            or []
-        )
-        if isinstance(op_list, dict):
-            op_list = [op_list]
-        op = next((p for p in op_list if str(p.get("Port", "")) == name), {})
+        swp      = cfg.get("switchport", {})
+        cur_mode = swp.get("mode", "access")
+        raw_range = (swp.get("trunk", {}).get("allowed", {})
+                     .get("vlan", {}).get("vlan-range", ""))
 
         port = {
             "description":   cfg.get("description", ""),
             "shutdown":      "shutdown" in cfg,
-            "mode":          op.get("adminstrative-mode", "access"),
-            "access_vlan":   op.get("access-mode-vlan", 1),
-            "native_vlan":   op.get("trunk-native-mode-vlan", 1),
-            "allowed_vlans": op.get("trunking-vlans", ""),
+            "mode":          cur_mode,
+            "access_vlan":   swp.get("access", {}).get("vlan", 1),
+            "native_vlan":   swp.get("trunk", {}).get("native", {}).get("vlan", 1),
+            "allowed_vlans": raw_range if raw_range not in ("None", None) else "",
         }
     except Exception as exc:
         app.logger.warning(f"switchport_edit {name}: {exc}")
