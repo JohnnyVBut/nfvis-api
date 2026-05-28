@@ -172,12 +172,18 @@
   <div class="grid-stack-item" gs-id="networks" gs-x="0" gs-y="11" gs-w="4" gs-h="6">
     <div class="grid-stack-item-content">
       <div class="card shadow-sm">
-        <div class="card-header fw-semibold">
-          <i class="bi bi-diagram-3 me-2 text-secondary"></i>Virtual Networks
+        <div class="card-header fw-semibold d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-diagram-3 me-2 text-secondary"></i>Virtual Networks</span>
+          <button class="btn btn-sm btn-outline-secondary py-0 lh-1"
+                  data-bs-toggle="modal" data-bs-target="#addNetworkModal"
+                  title="Add network"
+                  onmousedown="event.stopPropagation()">
+            <i class="bi bi-plus-lg"></i>
+          </button>
         </div>
         <div class="card-body p-0"
              hx-get="{{ url_for('htmx_networks') }}"
-             hx-trigger="load"
+             hx-trigger="load, refreshNetworks from:body"
              hx-swap="innerHTML">
           {% include "htmx/_spinner.html" %}
         </div>

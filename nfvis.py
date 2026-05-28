@@ -627,6 +627,14 @@ class API:
     def get_net(self) -> tuple[int, str]:
         return self.query(command="get_networks")
 
+    def get_bridge_list(self) -> list:
+        """Return list of bridge names from config/bridges."""
+        _, raw = self.query("get_bridges")
+        bridges = json.loads(raw).get("network:bridges", {}).get("bridge", [])
+        if isinstance(bridges, dict):
+            bridges = [bridges]
+        return [b["name"] for b in bridges if "name" in b]
+
     def get_network_list(self, brief: bool = False) -> list:
         code, result = self.query(command="get_networks")
         if code != 200:

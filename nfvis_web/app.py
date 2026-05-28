@@ -695,6 +695,134 @@ def dashboard_vm_console(name):
         return render_template("htmx/toast.html", category="danger", message=str(exc))
 
 
+def _get_bridges(api) -> list:
+    try:
+        return api.get_bridge_list()
+    except Exception:
+        return ["lan-br", "wan-br"]   # fallback so form stays usable
+
+
+def _parse_vlans(raw: str) -> list:
+    """'10, 20, 30' → [10, 20, 30]"""
+    result = []
+    for v in raw.replace(";", ",").split(","):
+        v = v.strip()
+        if v.isdigit():
+            result.append(int(v))
+    return result
+
+
+@app.get("/dashboard/networks/new")
+@login_required
+def htmx_network_new():
+    api = _get_api()
+    return render_template("htmx/network_form.html",
+                           bridges=_get_bridges(api),
+                           is_edit=False, net={})
+
+
+@app.get("/dashboard/networks/<name>/edit")
+@login_required
+def htmx_network_edit(name):
+    api = _get_api()
+    try:
+        _, raw = api.query("get_networks")
+        all_nets = (json.loads(raw)
+                    .get("network:networks", {}).get("network", []))
+        if isinstance(all_nets, dict):
+            all_nets = [all_nets]
+        net = next((n for n in all_nets if n.get("name") == name), {})
+    except Exception as exc:
+        app.logger.warning(f"network_edit fetch {name}: {exc}")
+        net = {"name": name}
+    return render_template("htmx/network_form.html",
+                           bridges=_get_bridges(api),
+                           is_edit=True, net=net)
+
+
+@app.post("/dashboard/networks")
+@login_required
+def dashboard_network_create():
+    api = _get_api()
+    try:
+        f           = request.form
+        name        = f.get("name", "").strip()
+        mode        = f.get("mode", "access")
+        vlan_raw    = f.get("vlans", "").strip()
+        native_vlan = f.get("native_vlan", "1").strip() or "1"
+        bridge      = f.get("bridge", "lan-br").strip()
+
+        if not name or not vlan_raw:
+            return render_template("htmx/toast.html", category="danger",
+                                   message="Name and VLAN(s) are required.")
+        vlans = _parse_vlans(vlan_raw)
+        if not vlans:
+            return render_template("htmx/toast.html", category="danger",
+                                   message="Invalid VLAN value.")
+
+        net = Network(name=name, vlan=vlans, trunk=(mode == "trunk"),
+                      native_vlan=int(native_vlan), bridge=bridge, sriov=False)
+        code, _ = api.add_network(net.get_config())
+        if code in (200, 201):
+            resp = make_response(render_template("htmx/toast.html", category="success",
+                                                 message=f"Network '{name}' created."))
+            resp.headers["HX-Trigger"] = "refreshNetworks"
+            return resp
+        return render_template("htmx/toast.html", category="danger",
+                               message=f"Create failed (HTTP {code}).")
+    except Exception as exc:
+        return render_template("htmx/toast.html", category="danger", message=str(exc))
+
+
+@app.put("/dashboard/networks/<name>")
+@login_required
+def dashboard_network_update(name):
+    api = _get_api()
+    try:
+        f           = request.form
+        mode        = f.get("mode", "access")
+        vlan_raw    = f.get("vlans", "").strip()
+        native_vlan = f.get("native_vlan", "1").strip() or "1"
+        bridge      = f.get("bridge", "lan-br").strip()
+
+        vlans = _parse_vlans(vlan_raw)
+        if not vlans:
+            return render_template("htmx/toast.html", category="danger",
+                                   message="Invalid VLAN value.")
+
+        net = Network(name=name, vlan=vlans, trunk=(mode == "trunk"),
+                      native_vlan=int(native_vlan), bridge=bridge, sriov=False)
+        # PUT expects singular network object
+        net_dict = json.loads(net.get_config())["network"][0]
+        code, _ = api.modify_network(name, json.dumps({"network": net_dict}))
+        if code in (200, 201, 204):
+            resp = make_response(render_template("htmx/toast.html", category="success",
+                                                 message=f"Network '{name}' updated."))
+            resp.headers["HX-Trigger"] = "refreshNetworks"
+            return resp
+        return render_template("htmx/toast.html", category="danger",
+                               message=f"Update failed (HTTP {code}).")
+    except Exception as exc:
+        return render_template("htmx/toast.html", category="danger", message=str(exc))
+
+
+@app.delete("/dashboard/networks/<name>")
+@login_required
+def dashboard_network_delete(name):
+    api = _get_api()
+    try:
+        code = api.del_network(name)
+        if code == 204:
+            resp = make_response(render_template("htmx/toast.html", category="success",
+                                                 message=f"Network '{name}' deleted."))
+            resp.headers["HX-Trigger"] = "refreshNetworks"
+            return resp
+        return render_template("htmx/toast.html", category="danger",
+                               message=f"Delete failed (HTTP {code}).")
+    except Exception as exc:
+        return render_template("htmx/toast.html", category="danger", message=str(exc))
+
+
 @app.get("/dashboard/networks")
 @login_required
 def htmx_networks():

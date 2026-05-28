@@ -7,6 +7,7 @@
       <th>Mode</th>
       <th>Native VLAN</th>
       <th>Bridge</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
@@ -28,6 +29,22 @@
         {% if net.get('trunk') %}{{ net.get('native-vlan', '—') }}{% else %}—{% endif %}
       </td>
       <td class="text-secondary font-monospace">{{ net.get('bridge', '—') }}</td>
+      <td class="text-end text-nowrap pe-2">
+        <button class="btn btn-link btn-sm p-0 me-2 text-secondary"
+                title="Edit"
+                data-bs-toggle="modal" data-bs-target="#editNetworkModal"
+                data-network-name="{{ net.get('name', '') }}"
+                onmousedown="event.stopPropagation()">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button class="btn btn-link btn-sm p-0 text-danger"
+                title="Delete"
+                data-bs-toggle="modal" data-bs-target="#deleteNetworkModal"
+                data-network-name="{{ net.get('name', '') }}"
+                onmousedown="event.stopPropagation()">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
     </tr>
     {% endfor %}
   </tbody>

@@ -244,6 +244,61 @@
   </div>
 </div>
 
+<!-- ── Add Network modal ──────────────────────────────────────────── -->
+<div class="modal fade" id="addNetworkModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title text-secondary">
+          <i class="bi bi-diagram-3 me-2"></i>Add Virtual Network
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div id="addNetworkModalBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Edit Network modal ─────────────────────────────────────────── -->
+<div class="modal fade" id="editNetworkModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title text-secondary" id="editNetworkModalTitle">Edit Network</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div id="editNetworkModalBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Delete Network modal ───────────────────────────────────────── -->
+<div class="modal fade" id="deleteNetworkModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title text-danger">
+          <i class="bi bi-trash me-2"></i>Delete Network
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body small">
+        Delete network <strong id="deleteNetworkNameDisplay"></strong>?
+        <br><span class="text-secondary">This cannot be undone.</span>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-secondary"
+                data-bs-dismiss="modal">Cancel</button>
+        <button type="button" id="confirmDeleteNetworkBtn"
+                class="btn btn-sm btn-danger"
+                data-bs-dismiss="modal">
+          <i class="bi bi-trash me-1"></i>Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Inactivity warning modal ───────────────────────────────────── -->
 {% if request.endpoint not in ('login',) %}
 <div class="modal fade" id="inactivityModal" tabindex="-1"
@@ -391,6 +446,50 @@ document.getElementById('addFlavorModal').addEventListener('submit', function ()
   setTimeout(function () {
     document.body.dispatchEvent(new CustomEvent('refreshFlavors', {bubbles: true}));
   }, 1000);
+});
+
+// Add Network modal: load form dynamically
+document.getElementById('addNetworkModal').addEventListener('show.bs.modal', function () {
+  document.getElementById('addNetworkModalBody').innerHTML =
+    '<div class="d-flex justify-content-center p-4"><div class="spinner-border text-secondary"></div></div>';
+  htmx.ajax('GET', '/dashboard/networks/new', {target: '#addNetworkModalBody', swap: 'innerHTML'});
+});
+document.getElementById('addNetworkModal').addEventListener('submit', function () {
+  var modal = bootstrap.Modal.getInstance(this);
+  if (modal) modal.hide();
+  setTimeout(function () {
+    document.body.dispatchEvent(new CustomEvent('refreshNetworks', {bubbles: true}));
+  }, 1000);
+});
+
+// Edit Network modal: load edit form dynamically
+document.getElementById('editNetworkModal').addEventListener('show.bs.modal', function (e) {
+  var name = e.relatedTarget && e.relatedTarget.getAttribute('data-network-name');
+  if (!name) return;
+  document.getElementById('editNetworkModalTitle').textContent = 'Edit: ' + name;
+  document.getElementById('editNetworkModalBody').innerHTML =
+    '<div class="d-flex justify-content-center p-4"><div class="spinner-border text-secondary"></div></div>';
+  htmx.ajax('GET', '/dashboard/networks/' + encodeURIComponent(name) + '/edit',
+            {target: '#editNetworkModalBody', swap: 'innerHTML'});
+});
+document.getElementById('editNetworkModal').addEventListener('submit', function () {
+  var modal = bootstrap.Modal.getInstance(this);
+  if (modal) modal.hide();
+  setTimeout(function () {
+    document.body.dispatchEvent(new CustomEvent('refreshNetworks', {bubbles: true}));
+  }, 1000);
+});
+
+// Delete Network modal: set name and store URL on button
+document.getElementById('deleteNetworkModal').addEventListener('show.bs.modal', function (e) {
+  var name = e.relatedTarget && e.relatedTarget.getAttribute('data-network-name');
+  if (!name) return;
+  document.getElementById('deleteNetworkNameDisplay').textContent = name;
+  document.getElementById('confirmDeleteNetworkBtn')._url = '/dashboard/networks/' + encodeURIComponent(name);
+});
+document.getElementById('confirmDeleteNetworkBtn').addEventListener('click', function () {
+  if (!this._url) return;
+  htmx.ajax('DELETE', this._url, {target: '#toast-container', swap: 'beforeend'});
 });
 
 // VNC Console: open in a new tab when the server sends the openConsole event
