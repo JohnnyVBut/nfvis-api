@@ -299,6 +299,65 @@
   </div>
 </div>
 
+<!-- ── Add VLAN modal ─────────────────────────────────────────────── -->
+<div class="modal fade" id="addVlanModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title text-primary">
+          <i class="bi bi-tag me-2"></i>Add VLAN
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="addVlanForm"
+            hx-post="{{ url_for('dashboard_vlan_create') }}"
+            hx-target="#toast-container"
+            hx-swap="beforeend">
+        <div class="modal-body">
+          <label class="form-label fw-semibold small">VLAN ID</label>
+          <input type="number" class="form-control form-control-sm"
+                 name="vlan_id" min="1" max="4094" required
+                 placeholder="1–4094" autofocus>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-secondary"
+                  data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Add
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ── Delete VLAN modal ──────────────────────────────────────────── -->
+<div class="modal fade" id="deleteVlanModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title text-danger">
+          <i class="bi bi-trash me-2"></i>Delete VLAN
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body small">
+        Delete VLAN <strong id="deleteVlanIdDisplay"></strong>?
+        <br><span class="text-secondary">This cannot be undone.</span>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-secondary"
+                data-bs-dismiss="modal">Cancel</button>
+        <button type="button" id="confirmDeleteVlanBtn"
+                class="btn btn-sm btn-danger"
+                data-bs-dismiss="modal">
+          <i class="bi bi-trash me-1"></i>Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Inactivity warning modal ───────────────────────────────────── -->
 {% if request.endpoint not in ('login',) %}
 <div class="modal fade" id="inactivityModal" tabindex="-1"
@@ -446,6 +505,27 @@ document.getElementById('addFlavorModal').addEventListener('submit', function ()
   setTimeout(function () {
     document.body.dispatchEvent(new CustomEvent('refreshFlavors', {bubbles: true}));
   }, 1000);
+});
+
+// Add VLAN modal: close and refresh on submit
+document.getElementById('addVlanForm').addEventListener('submit', function () {
+  var modal = bootstrap.Modal.getInstance(document.getElementById('addVlanModal'));
+  if (modal) modal.hide();
+});
+document.getElementById('addVlanModal').addEventListener('hidden.bs.modal', function () {
+  document.getElementById('addVlanForm').reset();
+});
+
+// Delete VLAN modal: set VLAN ID and store URL on button
+document.getElementById('deleteVlanModal').addEventListener('show.bs.modal', function (e) {
+  var id = e.relatedTarget && e.relatedTarget.getAttribute('data-vlan-id');
+  if (!id) return;
+  document.getElementById('deleteVlanIdDisplay').textContent = id;
+  document.getElementById('confirmDeleteVlanBtn')._url = '/dashboard/vlans/' + encodeURIComponent(id);
+});
+document.getElementById('confirmDeleteVlanBtn').addEventListener('click', function () {
+  if (!this._url) return;
+  htmx.ajax('DELETE', this._url, {target: '#toast-container', swap: 'beforeend'});
 });
 
 // Add Network modal: load form dynamically

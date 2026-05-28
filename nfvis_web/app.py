@@ -968,10 +968,53 @@ def htmx_vlans():
             or collection.get("vlan")
             or []
         )
+        if isinstance(vlans, dict):
+            vlans = [vlans]
+        vlans = sorted(vlans, key=lambda v: int(v.get("vlan-id", v.get("id", 0))))
     except Exception as exc:
         app.logger.warning(f"show_vlan error: {exc}")
         vlans = []
     return render_template("htmx/vlans.html", vlans=vlans)
+
+
+@app.post("/dashboard/vlans")
+@login_required
+def dashboard_vlan_create():
+    api = _get_api()
+    try:
+        vlan_id = int(request.form.get("vlan_id", "").strip())
+        if not (1 <= vlan_id <= 4094):
+            raise ValueError("VLAN ID must be 1–4094.")
+        v = Vlan(vlan_id=vlan_id)
+        code = api.add_vlan(v.get_config())
+        if code in (200, 201, 204):
+            resp = make_response(render_template("htmx/toast.html", category="success",
+                                                 message=f"VLAN {vlan_id} added."))
+            resp.headers["HX-Trigger"] = "refreshVlans"
+            return resp
+        return render_template("htmx/toast.html", category="danger",
+                               message=f"Add failed (HTTP {code}).")
+    except (ValueError, TypeError) as exc:
+        return render_template("htmx/toast.html", category="danger", message=str(exc))
+    except Exception as exc:
+        return render_template("htmx/toast.html", category="danger", message=str(exc))
+
+
+@app.delete("/dashboard/vlans/<int:vlan_id>")
+@login_required
+def dashboard_vlan_delete(vlan_id):
+    api = _get_api()
+    try:
+        code = api.del_vlan(vlan_id)
+        if code in (200, 204):
+            resp = make_response(render_template("htmx/toast.html", category="success",
+                                                 message=f"VLAN {vlan_id} deleted."))
+            resp.headers["HX-Trigger"] = "refreshVlans"
+            return resp
+        return render_template("htmx/toast.html", category="danger",
+                               message=f"Delete failed (HTTP {code}).")
+    except Exception as exc:
+        return render_template("htmx/toast.html", category="danger", message=str(exc))
 
 
 @app.get("/dashboard/portchannels")

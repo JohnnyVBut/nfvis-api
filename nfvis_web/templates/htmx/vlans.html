@@ -3,31 +3,27 @@
   <thead class="table-light">
     <tr>
       <th>VLAN ID</th>
-      <th>Name</th>
-      <th>State</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
     {% for vlan in vlans %}
+    {% set vid = vlan.get('vlan-id', vlan.get('id', '')) %}
     <tr>
-      <td class="fw-semibold">{{ vlan.get('vlan-id', vlan.get('id', '—')) }}</td>
-      <td>{{ vlan.get('name', '—') }}</td>
-      <td>
-        {% set state = vlan.get('state', vlan.get('status', '')) | lower %}
-        {% if 'active' in state %}
-          <span class="badge bg-success">Active</span>
-        {% elif 'suspend' in state %}
-          <span class="badge bg-warning text-dark">Suspended</span>
-        {% elif state %}
-          <span class="badge bg-secondary">{{ state }}</span>
-        {% else %}
-          <span class="text-secondary">—</span>
-        {% endif %}
+      <td class="fw-semibold font-monospace">{{ vid }}</td>
+      <td class="text-end pe-2">
+        <button class="btn btn-link btn-sm p-0 text-danger"
+                title="Delete VLAN {{ vid }}"
+                data-bs-toggle="modal" data-bs-target="#deleteVlanModal"
+                data-vlan-id="{{ vid }}"
+                onmousedown="event.stopPropagation()">
+          <i class="bi bi-trash"></i>
+        </button>
       </td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 {% else %}
-<p class="text-secondary small p-3 mb-0">No VLANs found.</p>
+<p class="text-secondary small p-3 mb-0">No VLANs configured.</p>
 {% endif %}

@@ -212,12 +212,18 @@
   <div class="grid-stack-item" gs-id="vlans" gs-x="0" gs-y="17" gs-w="2" gs-h="6">
     <div class="grid-stack-item-content">
       <div class="card shadow-sm">
-        <div class="card-header fw-semibold">
-          <i class="bi bi-tag me-2 text-primary"></i>VLANs
+        <div class="card-header fw-semibold d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-tag me-2 text-primary"></i>Switch VLANs</span>
+          <button class="btn btn-sm btn-outline-primary py-0 lh-1"
+                  data-bs-toggle="modal" data-bs-target="#addVlanModal"
+                  title="Add VLAN"
+                  onmousedown="event.stopPropagation()">
+            <i class="bi bi-plus-lg"></i>
+          </button>
         </div>
         <div class="card-body p-0"
              hx-get="{{ url_for('htmx_vlans') }}"
-             hx-trigger="load"
+             hx-trigger="load, refreshVlans from:body"
              hx-swap="innerHTML">
           {% include "htmx/_spinner.html" %}
         </div>
