@@ -1,5 +1,95 @@
 # Cisco NFVIS API — Documentation
 
+---
+
+## Web Dashboard — Quick Start
+
+A browser-based management dashboard for NFVIS appliances. No cloud account required — runs locally and connects directly to your device.
+
+### 1. Install Python
+
+**Windows:**
+1. Go to [python.org/downloads](https://www.python.org/downloads/)
+2. Download the latest **Python 3.12** installer
+3. Run the installer — check **"Add Python to PATH"** before clicking Install
+4. Open **Command Prompt** (`Win + R` → `cmd`)
+
+**macOS:**
+```bash
+# Option A — official installer from python.org (recommended for beginners)
+# Download from https://www.python.org/downloads/
+
+# Option B — Homebrew
+brew install python
+```
+
+Verify installation:
+```bash
+python --version        # Windows
+python3 --version       # macOS / Linux
+```
+
+### 2. Download the project
+
+```bash
+git clone https://github.com/JohnnyVBut/nfvis-api.git
+cd nfvis-api/nfvis/nfvis_web
+```
+
+Or download as ZIP from GitHub → unzip → open a terminal in the `nfvis/nfvis_web` folder.
+
+### 3. Create a virtual environment
+
+```bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
+
+# macOS / Linux
+python3 -m venv venv
+source venv/bin/activate
+```
+
+The prompt will change to show `(venv)` — this means the environment is active.
+
+### 4. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 5. Run the dashboard
+
+```bash
+python app.py
+```
+
+Open in your browser: **http://127.0.0.1:5001**
+
+Log in with your NFVIS appliance IP address, username, and password.
+
+### Stopping the server
+
+Press `Ctrl + C` in the terminal.
+
+### Next time
+
+The virtual environment only needs to be created once. On subsequent runs:
+
+```bash
+# Windows
+cd nfvis-api/nfvis/nfvis_web
+venv\Scripts\activate
+python app.py
+
+# macOS / Linux
+cd nfvis-api/nfvis/nfvis_web
+source venv/bin/activate
+python3 app.py
+```
+
+---
+
 ## Overview
 
 Python library for managing Cisco Enterprise NFVIS (Network Functions Virtualization Infrastructure Software) appliances via REST API. Provides data models for configuring VM deployments, networks, VLANs, switchports, SNMP, TACACS, and system settings, as well as a session-based HTTP client with automatic retry.
