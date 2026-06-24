@@ -476,7 +476,7 @@ def htmx_deployment_edit(name):
             and (current_disk is None or f.get("root_disk_mb") == current_disk)
         ]
 
-        networks = api.get_network_list(brief=True)
+        networks = _add_builtin_networks(api.get_network_list(brief=True))
     except Exception as exc:
         app.logger.warning(f"htmx_deployment_edit {name}: {exc}")
         return f"<p class='text-danger small'>Error: {exc}</p>", 500
@@ -524,7 +524,7 @@ def htmx_deployment_new():
     api = _get_api()
     try:
         images   = api.get_images_with_props()
-        networks = api.get_network_list(brief=True)
+        networks = _add_builtin_networks(api.get_network_list(brief=True))
     except Exception as exc:
         app.logger.warning(f"deployment_new error: {exc}")
         images, networks = [], []
@@ -695,6 +695,15 @@ def dashboard_vm_console(name):
         return render_template("htmx/toast.html", category="danger", message=str(exc))
 
 
+_BUILTIN_NETWORKS = ["int-mgmt-net"]
+
+
+def _add_builtin_networks(net_names: list) -> list:
+    """Prepend built-in networks not exposed by the API, avoiding duplicates."""
+    existing = set(net_names)
+    return [n for n in _BUILTIN_NETWORKS if n not in existing] + list(net_names)
+
+
 def _get_bridges(api) -> list:
     try:
         return api.get_bridge_list()
@@ -839,6 +848,13 @@ def htmx_networks():
     except Exception as exc:
         app.logger.warning(f"get_networks_operational error: {exc}")
         networks = []
+
+    # Prepend built-in networks the API doesn't expose
+    existing_names = {n.get("name") for n in networks}
+    builtins = [{"name": n, "builtin": True}
+                for n in _BUILTIN_NETWORKS if n not in existing_names]
+    networks = builtins + networks
+
     return render_template("htmx/networks.html", networks=networks)
 
 

@@ -15,21 +15,29 @@
     <tr>
       <td class="fw-semibold">{{ net.get('name', '—') }}</td>
       <td class="font-monospace">
-        {% set vlans = net.get('vlan', []) %}
-        {% if vlans %}{{ vlans | join(', ') }}{% else %}—{% endif %}
+        {% if net.get('builtin') %}—
+        {% else %}
+          {% set vlans = net.get('vlan', []) %}
+          {% if vlans %}{{ vlans | join(', ') }}{% else %}—{% endif %}
+        {% endif %}
       </td>
       <td>
-        {% if net.get('trunk') %}
+        {% if net.get('builtin') %}
+          <span class="badge bg-dark">Built-in</span>
+        {% elif net.get('trunk') %}
           <span class="badge bg-primary">Trunk</span>
         {% else %}
           <span class="badge bg-secondary">Access</span>
         {% endif %}
       </td>
       <td class="font-monospace">
-        {% if net.get('trunk') %}{{ net.get('native-vlan', '—') }}{% else %}—{% endif %}
+        {% if net.get('trunk') and not net.get('builtin') %}{{ net.get('native-vlan', '—') }}{% else %}—{% endif %}
       </td>
-      <td class="text-secondary font-monospace">{{ net.get('bridge', '—') }}</td>
+      <td class="text-secondary font-monospace">
+        {% if not net.get('builtin') %}{{ net.get('bridge', '—') }}{% else %}—{% endif %}
+      </td>
       <td class="text-end text-nowrap pe-2">
+        {% if not net.get('builtin') %}
         <button class="btn btn-link btn-sm p-0 me-2 text-secondary"
                 title="Edit"
                 data-bs-toggle="modal" data-bs-target="#editNetworkModal"
@@ -44,6 +52,7 @@
                 onmousedown="event.stopPropagation()">
           <i class="bi bi-trash"></i>
         </button>
+        {% endif %}
       </td>
     </tr>
     {% endfor %}
