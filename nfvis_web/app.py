@@ -97,7 +97,7 @@ def login():
                     resp.set_cookie(_COOKIE, token, httponly=True, samesite="Lax")
                     return resp
                 else:
-                    error = "Authentication failed. Check credentials."
+                    error = f"Authentication failed: {api.last_error}"
             except Exception as exc:
                 error = f"Cannot connect to {ip}: {exc}"
 
