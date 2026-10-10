@@ -142,11 +142,14 @@ def htmx_platform():
         )
         # Flatten nested hardware_info / software_info into a single dict
         data = {}
+        # First block wins: hardware_info.UUID must not be overwritten by
+        # switch_detail.UUID ("NA").
         for k, v in container.items():
             if isinstance(v, dict):
-                data.update(v)
+                for k2, v2 in v.items():
+                    data.setdefault(k2, v2)
             else:
-                data[k] = v
+                data.setdefault(k, v)
     except Exception as exc:
         app.logger.warning(f"platform-detail error: {exc}")
         data = {}
