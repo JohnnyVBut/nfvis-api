@@ -101,10 +101,6 @@ class API:
         self.username = username
         self.password = password
         self.hostname: str | None = None
-        # "legacy" (/api/..., NFVIS <= 4.12) or "restconf" (/restconf/data/...,
-        # NFVIS 4.14+).  Detected on first use; see _detect_api_style().
-        self.api_style: str | None = None
-        self.last_error: str = ""
         self._session = _create_session(username, password)
 
     # ------------------------------------------------------------------
@@ -116,14 +112,8 @@ class API:
         yang_type: str = "data", form: str = "json",
     ) -> tuple[int, str]:
         timeout = self._session.request_timeout  # type: ignore[attr-defined]
-        if self.api_style == ud.STYLE_RESTCONF:
-            mime = f"application/yang-data+{form}"
-            headers = {"Accept": mime}
-            if payload:
-                headers["Content-Type"] = mime
-        else:
-            mime = f"application/vnd.yang.{yang_type}+{form}"
-            headers = {"Content-Type": mime, "Accept": mime}
+        mime = f"application/vnd.yang.{yang_type}+{form}"
+        headers = {"Content-Type": mime, "Accept": mime}
 
         response = self._session.request(
             method=method,
@@ -138,30 +128,11 @@ class API:
         logger.debug(f"{method} {uri} → {code} {return_code(code)}")
         return code, content
 
-    def _detect_api_style(self) -> str:
-        """
-        Pick the REST flavour the appliance speaks.
-
-        NFVIS 4.14 removed the legacy ``/api/...`` tree (nginx answers 404),
-        leaving only ``/restconf/...``.  Legacy is preferred whenever it
-        responds, so 4.12 behaviour is unchanged.  Any non-404 answer
-        (including 401) means the legacy path exists.
-        """
-        if self.api_style:
-            return self.api_style
-        self.api_style = ud.STYLE_LEGACY
-        code, _ = self._request("GET", f"{self.url}/api/config/system/settings?deep")
-        if code == 404:
-            self.api_style = ud.STYLE_RESTCONF
-        logger.info(f"NFVIS API style: {self.api_style}")
-        return self.api_style
-
     def query(
         self, command: str, argument: str = "", payload: str = "", form: str = "json",
     ) -> tuple[int, str]:
-        style = self._detect_api_style()
         data = f"/{argument}" if argument else ""
-        uri, method, yang_type = ud.get_urn_data(command, self.url, data, style)
+        uri, method, yang_type = ud.get_urn_data(command, self.url, data)
         return self._request(method, uri, payload, yang_type, form)
 
     # ------------------------------------------------------------------
@@ -179,26 +150,14 @@ class API:
         else:
             self.password = getpass.getpass(f"Password for {self.username}: ")
         self._session = _create_session(self.username, self.password)
-        self.api_style = None
 
     def authenticated(self) -> bool:
-        """
-        True if the credentials are accepted.  On failure ``last_error``
-        holds the real HTTP status and a body excerpt (a 404 from nginx is
-        not a login failure, and should not be reported as one).
-        """
-        self.last_error = ""
         code, settings = self.query(command="get_settings")
         if code == 200:
-            try:
-                hostname = json.loads(settings)["system:settings"].get("hostname")
-            except (KeyError, AttributeError, json.JSONDecodeError):
-                hostname = None
-            self.hostname = hostname or urlparse(self.url).hostname
-            logger.info(f"User {self.username} authenticated on {self.hostname} ({self.api_style})")
+            self.hostname = json.loads(settings)["system:settings"]["hostname"]
+            logger.info(f"User {self.username} authenticated on {self.hostname}")
             return True
-        self.last_error = f"HTTP {code} {return_code(code)} on {self.api_style} API: {settings[:200]!r}"
-        logger.error(f"Authentication failed: {self.last_error}")
+        logger.error(f"Authentication failed: {code} {return_code(code)}")
         return False
 
     # ------------------------------------------------------------------
@@ -269,8 +228,6 @@ class API:
 
     def get_flavor_list(self) -> list:
         code, response = self.query(command="get_flavors")
-        if code == 204:
-            return []
         if code == 200:
             return [i["name"] for i in json.loads(response)["vmlc:flavors"]["flavor"]]
         logger.error(f"Unable to get flavor list: {code} {return_code(code)}")
