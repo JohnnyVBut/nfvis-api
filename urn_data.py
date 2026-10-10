@@ -8,6 +8,7 @@ entry point consumed by nfvis.py — its signature is unchanged.
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Tuple
+from urllib.parse import quote
 
 
 # ---------------------------------------------------------------------------
@@ -150,7 +151,63 @@ _ENDPOINTS: dict[str, _Endpoint] = {
 #  Public API  (signature kept for backward compatibility)
 # ---------------------------------------------------------------------------
 
-def get_urn_data(command: str, url: str, data: str = "") -> Tuple[str, str, str]:
+# ---------------------------------------------------------------------------
+#  RESTCONF translation  (NFVIS 4.14+: legacy /api/... was removed)
+# ---------------------------------------------------------------------------
+#
+# Newer NFVIS serves only ``/restconf/data/<module>:<container>/...``.
+# Legacy registry paths are translated on the fly instead of duplicating
+# every endpoint.  Verified on 4.14.1-FC1: system:system/settings,
+# platform_info:platform-detail, network:networks, network:bridges.
+# Everything else is a best-effort mapping — see ``API.api_style``.
+
+STYLE_LEGACY = "legacy"
+STYLE_RESTCONF = "restconf"
+
+_RESTCONF_ROOTS = {
+    "system":           "system:system",
+    "networks":         "network:networks",
+    "bridges":          "network:bridges",
+    "vm_lifecycle":     "vmlc:vm_lifecycle",
+    "banner-motd":      "banner_motd:banner-motd",
+    "snmp":             "snmp:snmp",
+    "security_servers": "security:security_servers",
+    "switch":           "switch:switch",
+    "pnics":            "pnic:pnics",
+    "platform-detail":  "platform_info:platform-detail",
+    "resources":        "resources:resources",
+}
+
+# Legacy "list/key" path pairs that RESTCONF writes as "list=key".
+_RESTCONF_KEYED = (
+    ("/tenants/tenant/admin", "/tenants/tenant=admin"),
+)
+
+
+def _to_restconf_url(command: str, endpoint: _Endpoint, url: str, data: str) -> str:
+    kind, _, rest = endpoint.path.split("?", 1)[0].partition("/")
+    root, _, tail = rest.partition("/")
+    module_root = _RESTCONF_ROOTS.get(root)
+    if kind not in ("config", "operational", "running") or module_root is None:
+        raise NotImplementedError(
+            f"Command '{command}' ({endpoint.path}) is not mapped to RESTCONF yet"
+        )
+
+    full = module_root + (f"/{tail}" if tail else "")
+    for old, new in _RESTCONF_KEYED:
+        full = full.replace(old, new)
+
+    if endpoint.append_argument:
+        key = data.lstrip("/").strip('"')
+        if key:
+            full += "=" + quote(key, safe="")
+        full += endpoint.suffix.split("?", 1)[0]
+    return f"{url}/restconf/data/{full}"
+
+
+def get_urn_data(
+    command: str, url: str, data: str = "", style: str = STYLE_LEGACY,
+) -> Tuple[str, str, str]:
     """
     Resolve *command* to a full URL, HTTP method, and YANG type.
 
@@ -162,6 +219,9 @@ def get_urn_data(command: str, url: str, data: str = "") -> Tuple[str, str, str]
         Base URL of the NFVIS appliance, e.g. ``https://10.0.0.1``.
     data : str, optional
         Path suffix to append (e.g. ``/image-name``). Defaults to ``""``.
+    style : str, optional
+        ``"legacy"`` (``/api/...``, NFVIS <= 4.12) or ``"restconf"``
+        (``/restconf/data/...``, NFVIS 4.14+).
 
     Returns
     -------
@@ -172,6 +232,8 @@ def get_urn_data(command: str, url: str, data: str = "") -> Tuple[str, str, str]
     ------
     ValueError
         If *command* is not found in the registry.
+    NotImplementedError
+        If *style* is ``"restconf"`` and the command has no RESTCONF mapping.
     """
     endpoint = _ENDPOINTS.get(command)
     if endpoint is None:
@@ -179,6 +241,10 @@ def get_urn_data(command: str, url: str, data: str = "") -> Tuple[str, str, str]
             f"Unknown command: '{command}'. "
             f"Available commands: {', '.join(sorted(_ENDPOINTS))}"
         )
+
+    if style == STYLE_RESTCONF:
+        full_url = _to_restconf_url(command, endpoint, url, data)
+        return full_url, str(endpoint.method.value), endpoint.yang_type
 
     if endpoint.append_argument:
         full_url = f"{url}{_BASE}{endpoint.path}{data}{endpoint.suffix}"
