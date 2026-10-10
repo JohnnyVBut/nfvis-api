@@ -364,10 +364,12 @@ def htmx_deployments():
         deps    = json.loads(raw_cfg).get("vmlc:deployments", {}).get("deployment", [])
 
         # Operational: state
-        _, raw_op = api.query("get_deployments_opdata")
+        code_op, raw_op = api.query("get_deployments_opdata")
+        if code_op not in (200, 204):
+            app.logger.warning(f"htmx_deployments opdata: HTTP {code_op}")
         op_list   = (json.loads(raw_op)
                      .get("collection", {})
-                     .get("vmlc:deployments", []))
+                     .get("vmlc:deployments", [])) if code_op == 200 else []
         if isinstance(op_list, dict):
             op_list = [op_list]
         op_by_name = {d.get("deployment_name"): d for d in op_list}
@@ -945,12 +947,17 @@ def dashboard_flavor_delete(name):
 def htmx_flavors():
     api = _get_api()
     try:
-        _, raw = api.query("get_flavors_deep")
-        flavors = (json.loads(raw)
-                   .get("vmlc:flavors", {})
-                   .get("flavor", []))
-        if isinstance(flavors, dict):
-            flavors = [flavors]
+        code, raw = api.query("get_flavors_deep")
+        if code == 200:
+            flavors = (json.loads(raw)
+                       .get("vmlc:flavors", {})
+                       .get("flavor", []))
+            if isinstance(flavors, dict):
+                flavors = [flavors]
+        else:
+            if code != 204:   # 204 = no flavors configured
+                app.logger.warning(f"htmx_flavors: HTTP {code}")
+            flavors = []
     except Exception as exc:
         app.logger.warning(f"htmx_flavors error: {exc}")
         flavors = []

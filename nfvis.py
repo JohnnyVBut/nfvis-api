@@ -249,6 +249,8 @@ class API:
 
     def get_image_list(self) -> list:
         code, response = self.query(command="get_image_list")
+        if code == 204:
+            return []
         try:
             return [i["name"] for i in json.loads(response)["vmlc:images"]["image"]]
         except (KeyError, json.JSONDecodeError):
@@ -257,7 +259,9 @@ class API:
 
     def get_images_with_props(self) -> list:
         """Return ACTIVE images with custom_property and property hints (placement, flavors)."""
-        _, raw = self.query("get_images_opdata")
+        code, raw = self.query("get_images_opdata")
+        if code != 200:
+            return []
         images = json.loads(raw).get("vmlc:images", {}).get("image", [])
         if isinstance(images, dict):
             images = [images]
