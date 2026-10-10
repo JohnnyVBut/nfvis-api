@@ -711,7 +711,9 @@ class API:
 
     def get_vlan_list(self) -> list:
         _, content = self.query(command="show_vlan")
-        return [v["vlan-id"] for v in json.loads(content)["collection"]["switch:vlan"]]
+        parsed = json.loads(content)
+        parsed = parsed.get("collection", parsed)   # RESTCONF has no wrapper
+        return [v["vlan-id"] for v in parsed["switch:vlan"]]
 
     def add_vlan(self, vlan_config: str) -> int:
         vlan = json.loads(vlan_config)["vlan"]["vlan-id"]

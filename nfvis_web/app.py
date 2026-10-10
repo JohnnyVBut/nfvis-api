@@ -367,8 +367,7 @@ def htmx_deployments():
         code_op, raw_op = api.query("get_deployments_opdata")
         if code_op not in (200, 204):
             app.logger.warning(f"htmx_deployments opdata: HTTP {code_op}")
-        op_list   = (json.loads(raw_op)
-                     .get("collection", {})
+        op_list   = (_collection(raw_op)
                      .get("vmlc:deployments", [])) if code_op == 200 else []
         if isinstance(op_list, dict):
             op_list = [op_list]
@@ -713,6 +712,28 @@ def _get_bridges(api) -> list:
         return ["lan-br", "wan-br"]   # fallback so form stays usable
 
 
+def _collection(raw: str) -> dict:
+    """Legacy API wrapped lists in {"collection": {...}}; RESTCONF does not."""
+    parsed = json.loads(raw)
+    return parsed.get("collection", parsed)
+
+
+def _allowed_vlans(vlan: dict) -> str:
+    """Trunk allowed VLANs: legacy "vlan-range" string, or RESTCONF "ids" list."""
+    rng = vlan.get("vlan-range")
+    if rng:
+        return rng
+    ids = sorted({int(i) for i in vlan.get("ids", [])})
+    parts, start = [], None
+    for i, v in enumerate(ids):
+        if start is None:
+            start = v
+        if i + 1 == len(ids) or ids[i + 1] != v + 1:
+            parts.append(str(start) if start == v else f"{start}-{v}")
+            start = None
+    return ",".join(parts)
+
+
 def _parse_vlans(raw: str) -> list:
     """'10, 20, 30' → [10, 20, 30]"""
     result = []
@@ -969,9 +990,21 @@ def htmx_flavors():
 def htmx_interfaces():
     api = _get_api()
     try:
-        code, raw = api.query("get_ports")
-        parsed = json.loads(raw)
-        pnics = parsed.get("pnic:pnics", {}).get("pnic", [])
+        if api._detect_api_style() == "restconf":
+            # pnic:pnics holds config only; MAC/speed/link live in pnics-detail
+            _, raw = api.query("get_pnics_detail")
+            details = (json.loads(raw).get("pnic_detail:pnics-detail", {})
+                       .get("pnic-detail", []))
+            pnics = [{
+                "name":        d.get("name", ""),
+                "mac-address": d.get("mac_address", ""),
+                "speed":       d.get("operational-speed") or "",
+                "link-status": d.get("link_state", ""),
+            } for d in details]
+        else:
+            code, raw = api.query("get_ports")
+            parsed = json.loads(raw)
+            pnics = parsed.get("pnic:pnics", {}).get("pnic", [])
     except Exception:
         pnics = []
     return render_template("htmx/interfaces.html", interfaces=pnics)
@@ -1047,7 +1080,7 @@ def htmx_portchannels():
     try:
         # Config: mode, VLANs, description
         _, raw_cfg = api.query("showPortChannel")
-        cfg_col = json.loads(raw_cfg).get("collection", {})
+        cfg_col = _collection(raw_cfg)
         cfg_list = (
             cfg_col.get("switch:port-channel")
             or cfg_col.get("port-channel:port-channel")
@@ -1060,7 +1093,7 @@ def htmx_portchannels():
 
         # Operational: link, speed, active members
         _, raw_op = api.query("get_portchannel_status")
-        op_col = json.loads(raw_op).get("collection", {})
+        op_col = _collection(raw_op)
         op_list = (
             op_col.get("switch:port-channel")
             or op_col.get("port-channel")
@@ -1081,7 +1114,7 @@ def htmx_portchannels():
                 "description":  cfg.get("description", ""),
                 "mode":         swp.get("mode", "—"),
                 "native_vlan":  trunk.get("native", {}).get("vlan", "—"),
-                "allowed_vlans": trunk.get("allowed", {}).get("vlan", {}).get("vlan-range", "—"),
+                "allowed_vlans": _allowed_vlans(trunk.get("allowed", {}).get("vlan", {})) or "—",
                 "access_vlan":  swp.get("access", {}).get("vlan", "—"),
                 "active_ports": op.get("Active-ports", ""),
                 "speed":        op.get("Speed", "—"),
@@ -1100,7 +1133,7 @@ def htmx_switchports():
     try:
         # Config: mode, VLANs, description, shutdown, channel-group
         _, raw_cfg = api.query("get_all_swp_config")
-        cfg_col = json.loads(raw_cfg).get("collection", {})
+        cfg_col = _collection(raw_cfg)
         cfg_list = (
             cfg_col.get("switch:gigabitEthernet")
             or cfg_col.get("gigabitEthernet")
@@ -1111,7 +1144,7 @@ def htmx_switchports():
 
         # Operational: link status only
         _, raw_op = api.query("get_swp_operational")
-        op_col = json.loads(raw_op).get("collection", {})
+        op_col = _collection(raw_op)
         op_list = (
             op_col.get("switch:gigabitEthernet")
             or op_col.get("gigabitEthernet")
@@ -1136,8 +1169,8 @@ def htmx_switchports():
             else:
                 access_vlan = "—"
                 native_vlan = str(swp.get("trunk", {}).get("native", {}).get("vlan", "—"))
-                raw_range   = (swp.get("trunk", {}).get("allowed", {})
-                               .get("vlan", {}).get("vlan-range", ""))
+                raw_range   = _allowed_vlans(
+                    swp.get("trunk", {}).get("allowed", {}).get("vlan", {}))
                 allowed_vlans = raw_range if raw_range not in ("None", "", None) else "—"
 
             op = op_by_port.get(port, {})
@@ -1165,7 +1198,7 @@ def htmx_switchport_edit(name):
     try:
         # Config is the source of truth for edit form
         _, raw_cfg = api.query("get_all_swp_config")
-        cfg_col = json.loads(raw_cfg).get("collection", {})
+        cfg_col = _collection(raw_cfg)
         cfg_list = (
             cfg_col.get("switch:gigabitEthernet")
             or cfg_col.get("gigabitEthernet")
@@ -1177,8 +1210,8 @@ def htmx_switchport_edit(name):
 
         swp      = cfg.get("switchport", {})
         cur_mode = swp.get("mode", "access")
-        raw_range = (swp.get("trunk", {}).get("allowed", {})
-                     .get("vlan", {}).get("vlan-range", ""))
+        raw_range = _allowed_vlans(
+            swp.get("trunk", {}).get("allowed", {}).get("vlan", {}))
 
         port = {
             "description":   cfg.get("description", ""),

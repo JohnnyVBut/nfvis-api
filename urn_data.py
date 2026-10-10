@@ -56,6 +56,7 @@ _ENDPOINTS: dict[str, _Endpoint] = {
     "get_mem_info":          _Endpoint("operational/resources/mem-info",                                        Method.GET,    "data",   append_argument=False),
     "get_disks":             _Endpoint("operational/system/ext-disks",                                          Method.GET,    "collection"),
     "get_ports":             _Endpoint("operational/pnics?deep",                                                Method.GET,    "data",   append_argument=False),
+    "get_pnics_detail":      _Endpoint("operational/pnics-detail",                                              Method.GET,    "data",   append_argument=False),  # 4.14+ only
     "get_banner":            _Endpoint("config/banner-motd",                                                    Method.GET,    "data"),
     "getUpgradeImageInfo":   _Endpoint("operational/system/upgrade/reg-info",                                   Method.GET,    "data"),
     "showPortChannel":           _Endpoint("config/switch/interface/port-channel",                              Method.GET,    "collection"),
@@ -174,6 +175,7 @@ _RESTCONF_ROOTS = {
     "security_servers": "security:security_servers",
     "switch":           "switch:switch",
     "pnics":            "pnic:pnics",
+    "pnics-detail":     "pnic_detail:pnics-detail",
     "platform-detail":  "platform_info:platform-detail",
     "resources":        "resources:resources",
 }
