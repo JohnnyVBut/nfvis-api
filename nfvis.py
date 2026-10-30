@@ -214,9 +214,12 @@ class API:
 
     def image_state(self, image_name: str) -> str:
         code, response = self.query(command="get_image_status", argument=image_name)
-        if code == 404:
+        if code in (204, 404):
             return "IMAGE_NOT_FOUND"
-        return json.loads(response)["vmlc:image"]["state"]
+        node = json.loads(response)["vmlc:image"]
+        if isinstance(node, list):   # RESTCONF returns a list entry as a 1-item array
+            node = node[0]
+        return node["state"]
 
     def image_active(self, image_name: str) -> bool:
         return self.image_state(image_name) == "IMAGE_ACTIVE_STATE"
