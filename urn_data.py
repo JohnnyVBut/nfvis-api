@@ -188,6 +188,9 @@ _RESTCONF_KEYED = (
 
 def _to_restconf_url(command: str, endpoint: _Endpoint, url: str, data: str) -> str:
     kind, _, rest = endpoint.path.split("?", 1)[0].partition("/")
+    if kind == "operations":
+        # RPCs/actions keep their path: the portal calls .../restconf/operations/vncconsole/start
+        return f"{url}/restconf/operations/{rest}"
     root, _, tail = rest.partition("/")
     module_root = _RESTCONF_ROOTS.get(root)
     if kind not in ("config", "operational", "running") or module_root is None:

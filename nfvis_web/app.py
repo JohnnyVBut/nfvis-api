@@ -694,7 +694,7 @@ def dashboard_vm_console(name):
         else:
             return render_template("htmx/toast.html",
                                    category="danger",
-                                   message=f"Console unavailable (HTTP {code}).")
+                                   message=f"Console unavailable (HTTP {code}): {str(result)[:200]}")
     except Exception as exc:
         return render_template("htmx/toast.html", category="danger", message=str(exc))
 

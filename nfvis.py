@@ -821,7 +821,9 @@ class API:
             logger.warning(f"get_console {deployment}/{vm}: {code} {return_code(code)}")
             return code, content
         try:
-            relative_url = json.loads(content)["vncconsole:output"]["vncconsole-url"]
+            parsed = json.loads(content)
+            out = parsed.get("vncconsole:output") or parsed.get("output") or parsed
+            relative_url = out["vncconsole-url"]
             # relative_url is like ":6005/vnc_auto.html" — prepend https + hostname
             hostname = urlparse(self.url).hostname
             full_url = f"https://{hostname}{relative_url}"
