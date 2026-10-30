@@ -9,7 +9,7 @@ import getpass
 import json
 import logging
 import time
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 import requests
 import urllib3
@@ -499,6 +499,9 @@ class API:
         the interface update — this resets resource reservations so that the
         device accepts the new configuration.
         """
+        if self._detect_api_style() == ud.STYLE_RESTCONF:
+            return self._modify_vm_interfaces_restconf(vm_name, interfaces, flavor)
+
         base = (
             f"{self.url}/api/config/vm_lifecycle/tenants/tenant/admin"
             f"/deployments/deployment/{vm_name}"
@@ -527,6 +530,31 @@ class API:
             "PUT", f"{base}/vm_group/{vm_name}/interfaces",
             json.dumps(payload_dict), yang_type="data", form="json"
         )
+
+    def _modify_vm_interfaces_restconf(
+        self, vm_name: str, interfaces: list[dict], flavor: str = None,
+    ) -> tuple[int, str]:
+        """RESTCONF variant: PUT replaces the interface list, flavor is its own leaf."""
+        name = quote(vm_name, safe="")
+        group = (
+            f"{self.url}/restconf/data/vmlc:vm_lifecycle/tenants/tenant=admin"
+            f"/deployments/deployment={name}/vm_group={name}"
+        )
+        logger.info(
+            f"modify_vm_interfaces {vm_name}: {len(interfaces)} NIC(s)"
+            + (f", flavor={flavor}" if flavor else "") + " (restconf)"
+        )
+        code, body = self._request(
+            "PUT", f"{group}/interfaces",
+            json.dumps({"vmlc:interfaces": {"interface": interfaces}}),
+        )
+        if code in (200, 201, 204) and flavor:
+            code, body = self._request(
+                "PUT", f"{group}/flavor", json.dumps({"vmlc:flavor": flavor}),
+            )
+        if code not in (200, 201, 204):
+            logger.warning(f"modify_vm_interfaces {vm_name}: {code} {body[:200]}")
+        return code, body
 
     def get_deployments(self, brief: bool = True, format: str = "json") -> str:
         logger.info("Getting deployments")
