@@ -1301,7 +1301,7 @@ def config_image_register():
     tag  = request.form.get("tag", "").strip() or None
     try:
         img    = Image(name=name, path=path, tag_name=tag)
-        code   = api.register_image(img)
+        code   = api.register_image(img.get_config())
         result = ("success", f"Image '{name}' registration started (HTTP {code}).")
     except Exception as exc:
         result = ("danger", str(exc))
@@ -1342,7 +1342,7 @@ def config_vm_deploy():
             datastore = f.get("datastore", "").strip(),
             **nic_kwargs,
         )
-        code   = api.deploy_vm(vm)
+        code   = api.deploy_vm(vm.get_config())
         result = ("success", f"VM '{vm.name}' deploy initiated (HTTP {code}).")
     except Exception as exc:
         result = ("danger", str(exc))
@@ -1387,7 +1387,7 @@ def config_network_add():
     trunk = request.form.get("trunk", "false").lower() == "true"
     try:
         net  = Network(name=name, vlan=int(vlan) if vlan else None, trunk=trunk)
-        code = api.add_network(net)
+        code, _ = api.add_network(net.get_config())
         result = ("success", f"Network '{name}' added (HTTP {code}).")
     except Exception as exc:
         result = ("danger", str(exc))
@@ -1416,7 +1416,7 @@ def config_vlan_add():
     vlan = request.form.get("vlan", "").strip()
     try:
         v    = Vlan(vlan_id=int(vlan))
-        code = api.add_vlan(v)
+        code = api.add_vlan(v.get_config())
         result = ("success", f"VLAN {vlan} added (HTTP {code}).")
     except Exception as exc:
         result = ("danger", str(exc))

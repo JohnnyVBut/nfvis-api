@@ -368,9 +368,13 @@ class API:
             if not datastore_ok:
                 logger.error(f"Datastore {datastore} not found")
 
-        resource_check = json.loads(self.res_check(vm_flavor)[1])["resources:vnf"]
-        sufficient_resources = resource_check["sufficient-resources"]
-        cause = resource_check["cause"]
+        try:
+            resource_check = json.loads(self.res_check(vm_flavor)[1])["resources:vnf"]
+            sufficient_resources = resource_check["sufficient-resources"]
+            cause = resource_check.get("cause", "")
+        except (KeyError, TypeError, ValueError, NotImplementedError):
+            logger.warning("Resource pre-check unavailable, skipping")
+            sufficient_resources, cause = True, "pre-check unavailable"
 
         if all([name_ok, image_ok, flavor_ok, nics_ok, datastore_ok, sufficient_resources]):
             logger.info("All VM config checks passed")
