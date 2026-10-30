@@ -15,13 +15,18 @@
 </dl>
 
 {% set extra = {} %}
+{% set tables = {} %}
 {% for key, val in data.items() %}
-  {% if key not in primary_keys and val is not mapping %}
-    {% if extra.update({key: val}) %}{% endif %}
+  {% if key not in primary_keys and val is not mapping and val != 'NA' %}
+    {% if val is iterable and val is not string and val and val[0] is mapping %}
+      {% if tables.update({key: val}) %}{% endif %}
+    {% else %}
+      {% if extra.update({key: val}) %}{% endif %}
+    {% endif %}
   {% endif %}
 {% endfor %}
 
-{% if extra %}
+{% if extra or tables %}
 <div class="mt-2">
   <button class="btn btn-link btn-sm p-0 text-secondary"
           type="button"
@@ -37,6 +42,21 @@
       <dd class="col-7 mb-1">{{ val }}</dd>
       {% endfor %}
     </dl>
+    {% for key, rows in tables.items() %}
+    <div class="small text-secondary mt-2">{{ key | replace('_', ' ') | capitalize }}</div>
+    <div class="table-responsive">
+      <table class="table table-sm small mb-0">
+        <thead>
+          <tr>{% for col in ['Name', 'Type', 'Media', 'Link', 'Speed', 'MTU', 'MAC'] %}<th>{{ col }}</th>{% endfor %}</tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>{% for col in ['Name', 'Type', 'Media', 'Link', 'Speed', 'MTU', 'MAC'] %}<td>{{ r.get(col, '') }}</td>{% endfor %}</tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
   </div>
 </div>
 {% endif %}
